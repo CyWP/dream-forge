@@ -4,7 +4,7 @@ from .operators.dream_texture import DreamTexture, ReleaseGenerator, CancelGener
 from .operators.view_history import SCENE_UL_HistoryList, RecallHistoryEntry, ClearHistory, RemoveHistorySelection, ExportHistorySelection, ImportPromptFile
 from .operators.inpaint_area_brush import InpaintAreaBrushActivated
 from .operators.upscale import Upscale
-from .operators.project import ProjectDreamTexture, dream_texture_projection_panels
+from .operators.project import ProjectDreamTexture, dream_texture_projection_panels, hephaestus_projection_panels
 from .operators.notify_result import NotifyResult
 from .property_groups.control_net import ControlNet, SCENE_UL_ControlNetList, ControlNetsAdd, ControlNetsRemove
 from .property_groups.dream_prompt import DreamPrompt
@@ -55,6 +55,7 @@ CLASSES = (
     *upscaling.upscaling_panels(),
     *history.history_panels(),
     *dream_texture_projection_panels(),
+    *hephaestus_projection_panels()
 )
 
 PREFERENCE_CLASSES = (
