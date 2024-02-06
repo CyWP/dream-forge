@@ -5,6 +5,7 @@ from .operators.view_history import SCENE_UL_HistoryList, RecallHistoryEntry, Cl
 from .operators.inpaint_area_brush import InpaintAreaBrushActivated
 from .operators.upscale import Upscale
 from .operators.project import ProjectDreamTexture, dream_texture_projection_panels
+from .operators.displace import DisplaceDreamtexture, dream_texture_displacement_panels
 from .operators.notify_result import NotifyResult
 from .property_groups.control_net import ControlNet, SCENE_UL_ControlNetList, ControlNetsAdd, ControlNetsRemove
 from .property_groups.dream_prompt import DreamPrompt
@@ -34,6 +35,7 @@ CLASSES = (
     InpaintAreaBrushActivated,
     Upscale,
     ProjectDreamTexture,
+    DisplaceDreamtexture,
     
     SCENE_UL_ControlNetList,
     ControlNetsAdd,
@@ -55,6 +57,7 @@ CLASSES = (
     *upscaling.upscaling_panels(),
     *history.history_panels(),
     *dream_texture_projection_panels(),
+    *dream_texture_displacement_panels(),
 )
 
 PREFERENCE_CLASSES = (
