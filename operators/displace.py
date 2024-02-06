@@ -11,7 +11,7 @@ from typing import List
 from .view_history import ImportPromptFile
 from .open_latest_version import OpenLatestVersion, is_force_show_download, new_version_available
 
-from ..ui.panels.dream_texture import advanced_panel, create_panel, prompt_panel, size_panel
+from ..ui.panels.hephaestus import create_panel, prompt_panel, size_panel
 from .dream_texture import CancelGenerator, ReleaseGenerator
 from .notify_result import NotifyResult
 
@@ -31,7 +31,7 @@ def dream_texture_displacement_panels():
 
     class DREAM_PT_dream_panel_displacement(bpy.types.Panel):
         """creates a Dream textures panel for displacement generation"""
-        bl_label = "Dream Texture Projection"
+        bl_label = "Dream Texture Displacement"
         bl_idname = f"DREAM_PT_dream_panel_displacement"
         bl_category = "Heph"
         bl_space_type = 'VIEW_3D'
@@ -63,7 +63,7 @@ def dream_texture_displacement_panels():
         return context.scene.dream_textures_project_prompt
     yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, prompt_panel, get_prompt)
     yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, size_panel, get_prompt)
-    yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, advanced_panel, get_prompt)
+    #yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, advanced_panel, get_prompt)
 
     def actions_panel(sub_panel, space_type, get_prompt):
 
@@ -106,6 +106,10 @@ def dream_texture_displacement_panels():
                     disabled_row.prop(context.scene, 'dream_textures_progress', slider=True)
                     disabled_row.enabled = False
                 row.operator(ReleaseGenerator.bl_idname, icon="X", text="")
+
+                
+        return ActionsPanel
+    yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, actions_panel, get_prompt)
 
 
 class DisplaceDreamtexture(bpy.types.Operator):
