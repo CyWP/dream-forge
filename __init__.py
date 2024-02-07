@@ -46,6 +46,7 @@ if current_process().name != "__actor__":
     from .tools import TOOLS
     from .operators.dream_texture import DreamTexture, kill_generator
     from .property_groups.dream_prompt import DreamPrompt
+    from .property_groups.hephaestus import HephProps
     from .property_groups.seamless_result import SeamlessResult
     from .ui.presets import register_default_presets
     
@@ -78,6 +79,7 @@ if current_process().name != "__actor__":
         check_for_updates()
 
         bpy.types.Scene.dream_textures_prompt = PointerProperty(type=DreamPrompt)
+        bpy.types.Scene.hephaestus_props = PointerProperty(type=HephProps)
         bpy.types.Scene.dream_textures_prompt_file = PointerProperty(type=bpy.types.Text)
         bpy.types.Scene.init_img = PointerProperty(name="Init Image", type=bpy.types.Image)
         bpy.types.Scene.init_mask = PointerProperty(name="Init Mask", type=bpy.types.Image)

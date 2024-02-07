@@ -17,6 +17,7 @@ from ...property_groups.dream_prompt import DreamPrompt, backend_options
 from ...generator_process.actions.prompt_to_image import Optimizations
 from ...generator_process.actions.detect_seamless import SeamlessAxes
 from ...api.models import FixItError
+from ... import api
 
 def create_panel(space_type, region_type, parent_id, ctor, get_prompt, use_property_decorate=False, **kwargs):
     class BasePanel(bpy.types.Panel):
@@ -53,9 +54,68 @@ def mesh_panel(sub_panel, space_type, get_prompt):
         def draw(self, context):
             layout = self.layout
             obj = context.object
+            props = get_prompt(context)
 
-            
+            layout.prop(props, 'vertex_group')
+            layout.prop(props, 'uv_map')
+            row = layout.row()
+            row.prop(props, 'auto_smoothing')
+            if props.auto_smoothing:
+                row.prop(props, 'smooth_amount')
 
+    return MeshPanel
+
+def control_panel(sub_panel, space_type, get_prompt):
+
+    class ControlPanel(sub_panel):
+        """Create a subpanel for control image input"""
+        bl_label = "Control"
+        bl_idname = f"DREAM_PT_dream_displacement_panel_control_{space_type}"
+
+        def draw_header_preset(self, context):
+            layout = self.layout
+            obj = context.object
+
+            layout.prop(get_prompt(context), "control_image")
+
+        def draw(self, context):
+            layout = self.layout
+            obj = context.object
+            props = get_prompt(context)
+
+            if props.control_image == 'External':
+                layout.prop(props, 'external_image')
+            elif props.control_image == 'Internal':
+                layout.prop(props, 'internal_image')
+            elif props.control_image == 'Texture':
+                layout.prop(props, 'texture_image')
+        
+    yield ControlPanel
+
+    class TilePanel(sub_panel):
+        """Create a subpanel for tiling input"""
+        bl_idname = f"DREAM_PT_dream_displacement_panel_tile_{space_type}"
+        bl_label = "Tile"
+        bl_parent_id = ControlPanel.bl_idname
+
+        def draw_header_preset(self, context):
+            layout = self.layout
+            obj = context.object
+            props = get_prompt(context)
+
+            layout.prop(props, "tile_image")
+
+        def draw(self, context):
+            layout = self.layout
+            obj = context.object
+            props = get_prompt(context)
+
+            if props.tile_image:
+                row = layout.row()
+                row.prop(props, 'tile_axes')
+                row.prop(props, 'tile_num')
+
+    yield TilePanel
 
 def prompt_panel(sub_panel, space_type, get_prompt):
     class PromptPanel(sub_panel):
@@ -131,4 +191,68 @@ def size_panel(sub_panel, space_type, get_prompt):
             layout.prop(get_prompt(context), "width")
             layout.prop(get_prompt(context), "height")
     return SizePanel
-   
+
+def advanced_panel(sub_panel, space_type, get_prompt):
+    class AdvancedPanel(sub_panel):
+        """Create a subpanel for advanced options"""
+        bl_idname = f"DREAM_PT_dream_panel_displacement_advanced_{space_type}"
+        bl_label = "Advanced"
+        bl_options = {'DEFAULT_CLOSED'}
+
+        def draw_header_preset(self, context):
+            DREAM_PT_AdvancedPresets.draw_panel_header(self.layout)
+
+        def draw(self, context):
+            super().draw(context)
+            layout = self.layout
+            layout.use_property_split = True
+            
+            prompt = get_prompt(context)
+            layout.prop(prompt, "random_seed")
+            if not prompt.random_seed:
+                layout.prop(prompt, "seed")
+            # advanced_box.prop(self, "iterations") # Disabled until supported by the addon.
+            layout.prop(prompt, "steps")
+            layout.prop(prompt, "cfg_scale")
+            layout.prop(prompt, "scheduler")
+            layout.prop(prompt, "step_preview_mode")
+
+            backend: api.Backend = prompt.get_backend()
+            backend.draw_advanced(layout, context)
+
+    yield AdvancedPanel
+
+    yield from optimization_panels(sub_panel, space_type, get_prompt, AdvancedPanel.bl_idname)
+
+def optimization_panels(sub_panel, space_type, get_prompt, parent_id=""):
+    class SpeedOptimizationPanel(sub_panel):
+        """Create a subpanel for speed optimizations"""
+        bl_idname = f"DREAM_PT_dream_panel_displacement_speed_optimizations_{space_type}"
+        bl_label = "Speed Optimizations"
+        bl_parent_id = parent_id
+
+        def draw(self, context):
+            super().draw(context)
+            layout = self.layout
+            layout.use_property_split = True
+            prompt = get_prompt(context)
+
+            backend: api.Backend = prompt.get_backend()
+            backend.draw_speed_optimizations(layout, context)
+    yield SpeedOptimizationPanel
+
+    class MemoryOptimizationPanel(sub_panel):
+        """Create a subpanel for memory optimizations"""
+        bl_idname = f"DREAM_PT_dream_panel_displacement_memory_optimizations_{space_type}"
+        bl_label = "Memory Optimizations"
+        bl_parent_id = parent_id
+
+        def draw(self, context):
+            super().draw(context)
+            layout = self.layout
+            layout.use_property_split = True
+            prompt = get_prompt(context)
+
+            backend: api.Backend = prompt.get_backend()
+            backend.draw_memory_optimizations(layout, context)
+    yield MemoryOptimizationPanel

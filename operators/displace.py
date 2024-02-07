@@ -11,7 +11,7 @@ from typing import List
 from .view_history import ImportPromptFile
 from .open_latest_version import OpenLatestVersion, is_force_show_download, new_version_available
 
-from ..ui.panels.hephaestus import create_panel, prompt_panel, size_panel
+from ..ui.panels.hephaestus import create_panel, prompt_panel, size_panel, advanced_panel, mesh_panel, control_panel
 from .dream_texture import CancelGenerator, ReleaseGenerator
 from .notify_result import NotifyResult
 
@@ -61,9 +61,13 @@ def dream_texture_displacement_panels():
 
     def get_prompt(context):
         return context.scene.dream_textures_project_prompt
+    def get_heph_props(context):
+        return context.scene.hephaestus_props
     yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, prompt_panel, get_prompt)
     yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, size_panel, get_prompt)
-    #yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, advanced_panel, get_prompt)
+    yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, advanced_panel, get_prompt)
+    yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, mesh_panel, get_heph_props)
+    yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, control_panel, get_heph_props)
 
     def actions_panel(sub_panel, space_type, get_prompt):
 
