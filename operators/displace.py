@@ -169,22 +169,21 @@ class DisplaceDreamtexture(bpy.types.Operator):
         #TODO: Set strength
         #TODO: midlevel
         mod.texture_coords = 'UV'
-        mod.uv_layer = heph_props.uv_map[1]
-        mod.vertex_group = heph_props.vertex_group[1]
+        mod.uv_layer = heph_props.uv_map
+        mod.vertex_group = heph_props.vertex_group
         mod.texture = tex
         
         #load direction image
-        print(heph_props.control_image[1])
-        if heph_props.control_image[1] == 'Internal':
-            ctrl_img = bpy.data.images.load(heph_props.internal_image[1])
-        elif heph_props.control_image[1] == 'External':
-            ctrl_img = bpy.data.images.load(heph_props.external_image[1])
-        elif  heph_props.control_image[1] == 'Texture':
-            ctrl_img = bpy.data.textures[heph_props.texture_image[1]].image
+        if heph_props.control_image == 'Internal':
+            ctrl_img = bpy.data.images.load(heph_props.internal_image)
+        elif heph_props.control_image == 'External':
+            ctrl_img = bpy.data.images.load(heph_props.external_image)
+        elif  heph_props.control_image == 'Texture':
+            ctrl_img = bpy.data.textures[heph_props.texture_image].image
         else:
             ctrl_img = bpy.data.images.new(name=f'{tex.name}_ctrl', width=dream_props.width, height=dream_props.height)
         #TODO: Implement Auto image
-
+            
         if(heph_props.tile_image):
             #TODO: Scale UV
             tex.extension = 'REPEAT'
@@ -198,6 +197,8 @@ class DisplaceDreamtexture(bpy.types.Operator):
             tex_img.pixels[:] = image.ravel()
             tex_img.update()
             tex.image = tex_img
+            mod.show_viewport = True
+            mod.show_render = True
             return CancelGenerator.should_continue
         
         def callback(results: List[api.GenerationResult] | Exception):
@@ -215,40 +216,26 @@ class DisplaceDreamtexture(bpy.types.Operator):
                 result = results[-1]
                 prompt_subject = context.scene.dream_textures_project_prompt.prompt_structure_token_subject
                 seed_str_length = len(str(result.seed))
-                #trim_aware_name = (prompt_subject[:54 - seed_str_length] + '..') if len(prompt_subject) > 54 else prompt_subject
-                #name_with_trimmed_prompt = f"{trim_aware_name} ({result.seed})"
 
                 if tex_img is None:
                     tex_img = bpy.data.images.new(name=tex.name, width=result.image.shape[1], height=result.image.shape[0])
                 tex_img.name = tex.name
-                #material.name = name_with_trimmed_prompt
+
                 tex_img.pixels[:] = result.image.ravel()
                 tex_img.update()
                 tex_img.pack()
-                '''image_texture_node.image = texture
-                if context.scene.dream_textures_project_bake:
-                    for bm, src_uv_layer in target_objects:
-                        dest = bpy.data.images.new(name=f"{texture.name} (Baked)", width=texture.size[0], height=texture.size[1])
-                        
-                        dest_uv_layer = bm.loops.layers.uv.active
-                        src_uvs = np.empty((len(bm.verts), 2), dtype=np.float32)
-                        dest_uvs = np.empty((len(bm.verts), 2), dtype=np.float32)
-                        for face in bm.faces:
-                            for loop in face.loops:
-                                src_uvs[loop.vert.index] = loop[src_uv_layer].uv
-                                dest_uvs[loop.vert.index] = loop[dest_uv_layer].uv
-                        bake(context, bm, result.image.ravel(), dest, src_uvs, dest_uvs)
-                        dest.update()
-                        dest.pack()
-                        image_texture_node.image = dest'''
 
         #generation part
         backend: api.Backend = context.scene.dream_textures_project_prompt.get_backend()
 
         context.scene.dream_textures_info = "Starting..."
         CancelGenerator.should_continue = True # reset global cancellation state
-        image = np.asarray(tex_img.pixels)if tex_img is not None else None
-        ctrl_img = np.asarray(ctrl_img.pixels) if ctrl_img is not None else None
+    
+        image = None
+        ctrl_img = np.asarray(ctrl_img.pixels).reshape((ctrl_img.size[0], ctrl_img.size[1], -1))*255 if ctrl_img is not None else None
+        if ctrl_img.shape[-1] == 3: #Ensure images are rgba
+            ctrl_img = np.stack([ctrl_img, np.ones(shape=(ctrl_img.size[0], ctrl_img.size[1], -1))*255])
+
         if context.scene.dream_textures_project_use_control_net:
             generated_args: api.GenerationArguments = context.scene.dream_textures_project_prompt.generate_args(context, init_image=image, control_images=[np.flipud(ctrl_img)])
             backend.generate(generated_args, step_callback=step_callback, callback=callback)

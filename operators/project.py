@@ -429,6 +429,7 @@ class ProjectDreamTexture(bpy.types.Operator):
         CancelGenerator.should_continue = True # reset global cancellation state
         image_data = bpy.data.images.load(init_img_path) if init_img_path is not None else None
         image = np.asarray(image_data.pixels).reshape((*depth.shape, image_data.channels)) if image_data is not None else None
+
         if context.scene.dream_textures_project_use_control_net:
             generated_args: api.GenerationArguments = context.scene.dream_textures_project_prompt.generate_args(context, init_image=image, control_images=[np.flipud(depth)])
             backend.generate(generated_args, step_callback=step_callback, callback=callback)
