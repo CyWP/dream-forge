@@ -232,10 +232,9 @@ class DisplaceDreamtexture(bpy.types.Operator):
         CancelGenerator.should_continue = True # reset global cancellation state
     
         image = None
-        ctrl_img = np.asarray(ctrl_img.pixels).reshape((ctrl_img.size[0], ctrl_img.size[1], -1))*255 if ctrl_img is not None else None
+        ctrl_img = np.asarray(ctrl_img.pixels).reshape((ctrl_img.size[0], ctrl_img.size[1], -1)) if ctrl_img is not None else None
         if ctrl_img.shape[-1] == 3: #Ensure images are rgba
-            ctrl_img = np.stack([ctrl_img, np.ones(shape=(ctrl_img.size[0], ctrl_img.size[1], -1))*255])
-
+            ctrl_img = np.stack([ctrl_img, np.ones(shape=(ctrl_img.size[0], ctrl_img.size[1], -1))])
         if context.scene.dream_textures_project_use_control_net:
             generated_args: api.GenerationArguments = context.scene.dream_textures_project_prompt.generate_args(context, init_image=image, control_images=[np.flipud(ctrl_img)])
             backend.generate(generated_args, step_callback=step_callback, callback=callback)
