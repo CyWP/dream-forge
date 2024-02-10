@@ -62,6 +62,12 @@ def mesh_panel(sub_panel, space_type, get_prompt):
             row.prop(props, 'auto_smoothing')
             if props.auto_smoothing:
                 row.prop(props, 'smooth_amount')
+            row=layout.row()
+            row.prop(props, 'disp_strength')
+            row.prop(props, 'disp_midlevel')
+            row=layout.row()
+            row.prop(props, 'active_modifier')
+            row.operator("shade.dream_texture_displace_update")
 
     return MeshPanel
 
@@ -89,33 +95,14 @@ def control_panel(sub_panel, space_type, get_prompt):
                 layout.prop(props, 'internal_image')
             elif props.control_image == 'Texture':
                 layout.prop(props, 'texture_image')
-        
-    yield ControlPanel
-
-    class TilePanel(sub_panel):
-        """Create a subpanel for tiling input"""
-        bl_idname = f"DREAM_PT_dream_displacement_panel_tile_{space_type}"
-        bl_label = "Tile"
-        bl_parent_id = ControlPanel.bl_idname
-
-        def draw_header_preset(self, context):
-            layout = self.layout
-            obj = context.object
-            props = get_prompt(context)
-
-            layout.prop(props, "tile_image")
-
-        def draw(self, context):
-            layout = self.layout
-            obj = context.object
-            props = get_prompt(context)
-
+            row=layout.row()
+            row.prop(props, "tile_image")
             if props.tile_image:
-                row = layout.row()
                 row.prop(props, 'tile_axes')
                 row.prop(props, 'tile_num')
 
-    yield TilePanel
+        
+    return ControlPanel
 
 def prompt_panel(sub_panel, space_type, get_prompt):
     class PromptPanel(sub_panel):

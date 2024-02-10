@@ -12,6 +12,16 @@ tiling_axes = (('BOTH', 'BOTH', ''),
                ('X', 'X', ''),
                ('Y', 'Y', ''))
 
+def get_active_modifiers(self, context):
+    obj = context.object
+    list = []
+    for mod in obj.modifiers:
+        if mod.name[:4]=="heph":
+            list.append((mod.name, mod.name, ""))
+    if len(list)==0:
+        return None
+    return list
+
 def get_internal_images(self, context):
     if bpy.data.images is None:
         return [('', '', '')]
@@ -50,6 +60,10 @@ def get_vertex_groups(self, context):
     return vglist
 
 attributes = {
+    #Scene
+    "active_modifier": EnumProperty(name="",
+                                     items=get_active_modifiers,
+                                     description="Modifier to update"), 
     #Mesh
     "vertex_group": EnumProperty(name="Vertex Group",
                                  items=get_vertex_groups,
@@ -64,6 +78,12 @@ attributes = {
                                    default=0.25, min=0., max=1.,
                                    subtype='PERCENTAGE',
                                    description="0 for no smoothing, 1 for max smoothing(full displacement only applied at farthest point from all edges)"),
+    "disp_strength": FloatProperty(name="Strength",
+                                   default=1.,
+                                   description="Strength multiplier of displacement distance."),
+    "disp_midlevel": FloatProperty(name="Midlevel",
+                                   default=0.5, min=0., max=1.,
+                                   description="Threshold dictating inwards or outwards displacement."),
     #Image
     "control_image": EnumProperty(name="Source",
                                  items=control_images,

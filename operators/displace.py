@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 import gpu
 import gpu.texture
 from gpu_extras.batch import batch_for_shader
@@ -27,6 +28,33 @@ from .. import api
 
 def _validate_displacement(context):
     return True
+
+def auto_smooth(context):
+    obj = context.object
+    heph_props = context.scene.hephaestus_props
+    gi = obj.vertex_groups[heph_props.vertex_group].index
+
+    class Vert:
+        def __init__(self, vert, neighbour):
+            self.neighbours=[]
+            self.vert = vert
+            self.neighbours.append(neighbour)
+
+        def add_neighbour(self, neighbour):
+            self.neighbours.append(neighbour)
+    #create copy of vertex group
+    for edge in obj.data.edges:
+        pass
+
+    #create graph of vertices in vg and their neighbours
+
+    #record min distance from edge for each
+
+    #apply weights to each
+
+    #set as vertext group for modifier
+
+    pass
 
 def dream_texture_displacement_panels():
 
@@ -68,7 +96,7 @@ def dream_texture_displacement_panels():
     yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, size_panel, get_prompt)
     yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, advanced_panel, get_prompt)
     yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, mesh_panel, get_heph_props)
-    yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, control_panel, get_heph_props)
+    yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, control_panel, get_heph_props)
 
     def actions_panel(sub_panel, space_type, get_prompt):
 
@@ -84,13 +112,6 @@ def dream_texture_displacement_panels():
                 layout.use_property_split = True
 
                 prompt = get_prompt(context)
-
-                col = layout.column()
-                
-                col.prop(context.scene, "dream_textures_project_use_control_net")
-                if context.scene.dream_textures_project_use_control_net and len(prompt.control_nets) > 0:
-                    col.prop(prompt.control_nets[0], "control_net", text="Depth ControlNet")
-                    col.prop(prompt.control_nets[0], "conditioning_scale", text="ControlNet Conditioning Scale")
 
                 row = layout.row(align=True)
                 row.scale_y = 1.5
@@ -116,6 +137,28 @@ def dream_texture_displacement_panels():
         return ActionsPanel
     yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, actions_panel, get_prompt)
 
+class UpdateDisplacement(bpy.types.Operator):
+    bl_idname = "shade.dream_texture_displace_update"
+    bl_label = "Update Mesh"
+    bl_description = "Update displacement parameters on mesh"
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.object
+        heph_props = context.scene.hephaestus_props
+        return heph_props.active_modifier not in (None, '')#No clue what it's actually returning, this works though
+    
+    def execute(self, context):
+        obj = context.object
+        heph_props = context.scene.hephaestus_props
+        mod = obj.modifiers[heph_props.active_modifier]
+
+        mod.strength = heph_props.disp_strength
+        mod.mid_level = heph_props.disp_midlevel
+        mod.uv_layer = heph_props.uv_map
+        mod.vertex_group = heph_props.vertex_group 
+        return {'FINISHED'}  
 
 class DisplaceDreamtexture(bpy.types.Operator):
     bl_idname = "shade.dream_texture_displace"
@@ -166,8 +209,8 @@ class DisplaceDreamtexture(bpy.types.Operator):
         mod = obj.modifiers.new(name=tex.name, type='DISPLACE')
         mod.show_viewport = False
         mod.show_render = False
-        #TODO: Set strength
-        #TODO: midlevel
+        mod.strength = heph_props.disp_strength
+        mod.mid_level = heph_props.disp_midlevel
         mod.texture_coords = 'UV'
         mod.uv_layer = heph_props.uv_map
         mod.vertex_group = heph_props.vertex_group
