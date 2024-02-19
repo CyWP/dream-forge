@@ -100,7 +100,6 @@ def control_panel(sub_panel, space_type, get_prompt):
             if props.tile_image:
                 row.prop(props, 'tile_axes')
                 row.prop(props, 'tile_num')
-
         
     return ControlPanel
 

@@ -21,6 +21,7 @@ from ..generator_process.models import ModelType
 from ..api.models import FixItError
 import tempfile
 import time
+import copy
 
 from ..engine.annotations.depth import render_depth_map
 
@@ -29,32 +30,72 @@ from .. import api
 def _validate_displacement(context):
     return True
 
-def auto_smooth(context):
+def auto_smooth(context, vg_name):
     obj = context.object
+    dat = obj.data
     heph_props = context.scene.hephaestus_props
-    gi = obj.vertex_groups[heph_props.vertex_group].index
+    smooth_factor = heph_props.smooth_amount
+    vgi = obj.vertex_groups[heph_props.vertex_group].index
 
-    class Vert:
-        def __init__(self, vert, neighbour):
-            self.neighbours=[]
-            self.vert = vert
-            self.neighbours.append(neighbour)
+    return vg_name
+'''def auto_smooth(context, vg_name):
+    obj = context.object
+    dat = obj.data
+    heph_props = context.scene.hephaestus_props
+    smooth_factor = heph_props.smooth_amount
+    vgi = obj.vertex_groups[heph_props.vertex_group].index
 
-        def add_neighbour(self, neighbour):
-            self.neighbours.append(neighbour)
-    #create copy of vertex group
-    for edge in obj.data.edges:
-        pass
-
-    #create graph of vertices in vg and their neighbours
-
+    #get all vertices in vertex group
+    vg = [ v.index for v in dat.vertices if vgi in [ vg.group for vg in v.groups ] ]
+    print(1)
+    #Map vertices to their neighbours
+    map = [set() for _ in range(len(dat.vertices))]
+    for edge in dat.edges:
+        if edge.vertices[0] in vg:
+            map[edge.vertices[0]].add(edge.vertices[1])
+        if edge.vertices[1] in vg:
+            map[edge.vertices[1]].add(edge.vertices[0])
+    print(2)
+    #define vertices on edge of vertex group
+    #edge_verts = [v for v in vg if [neighbor not in vg for neighbor in map[v.index]].any()]
+    edge_verts = [v for v in vg if any(neighbor not in vg for neighbor in map[v])]
+    print(3)
+    #initialize edge vertices' distances to 0
+    distances = [0 if i in edge_verts else float('inf') for i in range(len(dat.vertices)) ]
+    print(4)
     #record min distance from edge for each
-
-    #apply weights to each
-
-    #set as vertext group for modifier
-
-    pass
+    #start at edge, set neighbours distance f smaller, do the same with neighbours
+    active_verts = edge_verts
+    updates = True
+    #loop until weights are no longer updated, breadth-first search
+    i=0
+    while updates:
+        print(f'loop {i}')
+        i+=1
+        updates = False
+        new_verts = set()
+        for v in active_verts:
+            for neighbor in [adj for adj in map[v] if adj in vg]:
+                new_verts.add(neighbor)
+                new_dist = distances[v]+np.linalg.norm(dat.vertices[neighbor].co-dat.vertices[v].co)
+                if new_dist < distances[neighbor]:
+                    updates = True
+                    distances[neighbor] = new_dist
+        active_verts = new_verts
+    print(5)
+    distances = [0 if dist==float('inf') else dist for dist in distances]
+    #make new vg as copy of original oen with new weights
+    smoothed_vg = obj.vertex_groups.new(name=vg_name)
+    print(6)
+    #create weights list from list of distances
+    max_dist = max(distances)
+    threshold = max_dist*smooth_factor
+    weights = [-0.5*np.cos((np.pi*dist)/(threshold))+0.5 if dist<threshold else 1 for dist in [distances[v] for v in vg]]
+    print(weights)
+    print(distances)
+    smoothed_vg.add([v.index for v in vg], weights, 'ADD')
+    
+    return vg_name'''
 
 def dream_texture_displacement_panels():
 
@@ -112,6 +153,13 @@ def dream_texture_displacement_panels():
                 layout.use_property_split = True
 
                 prompt = get_prompt(context)
+
+                col = layout.column()
+                
+                col.prop(context.scene, "dream_textures_project_use_control_net")
+                if context.scene.dream_textures_project_use_control_net and len(prompt.control_nets) > 0:
+                    col.prop(prompt.control_nets[0], "control_net", text="Type")
+                    col.prop(prompt.control_nets[0], "conditioning_scale", text="Strength")
 
                 row = layout.row(align=True)
                 row.scale_y = 1.5
@@ -198,7 +246,10 @@ class DisplaceDreamtexture(bpy.types.Operator):
 
         #TODO: implement auto uv unwrapping     
 
-        #TODO: implement auto edge smoothing for vertex groups
+        if(heph_props.auto_smoothing):
+            vg_name = f"smooth_{heph_props.vertex_group}_{int(heph_props.smooth_amount*100)}"
+            if vg_name not in obj.vertex_groups:
+                mod.vertex_group = auto_smooth(context, vg_name=vg_name)
 
         #Create empty texture of correct size
         tex = bpy.data.textures.new(name=f'heph_{int(time.time()*100)}', type='IMAGE')

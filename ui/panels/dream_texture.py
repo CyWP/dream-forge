@@ -71,7 +71,7 @@ def dream_texture_panels():
                                 get_seamless_result=get_seamless_result)
         yield create_panel(space_type, 'UI', DreamTexturePanel.bl_idname, size_panel, get_prompt)
         yield from create_panel(space_type, 'UI', DreamTexturePanel.bl_idname, init_image_panels, get_prompt)
-        yield create_panel(space_type, 'UI', DreamTexturePanel.bl_idname, control_net_panel, get_prompt)
+            
         yield from create_panel(space_type, 'UI', DreamTexturePanel.bl_idname, advanced_panel, get_prompt)
         yield create_panel(space_type, 'UI', DreamTexturePanel.bl_idname, actions_panel, get_prompt)
 

@@ -19,7 +19,7 @@ def get_active_modifiers(self, context):
         if mod.name[:4]=="heph":
             list.append((mod.name, mod.name, ""))
     if len(list)==0:
-        return None
+        return [('', '', '')]
     return list
 
 def get_internal_images(self, context):
