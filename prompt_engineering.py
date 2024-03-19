@@ -133,12 +133,22 @@ file_batch_structure = PromptStructure(
     file_batch_prompt
 )
 
+def hephaestus_prompt(tokens):
+    return f"{tokens.subject}, 2d, flatpack, grayscale, displacement map"
+hephaestus_structure = PromptStructure(
+    'hephaestus',
+    "Hephaestus",
+    [subject_token],
+    hephaestus_prompt
+)
+
 prompt_structures = [
     custom_structure,
     texture_structure,
     photography_structure,
     concept_art_structure,
-    file_batch_structure
+    file_batch_structure,
+    hephaestus_structure
 ]
 
 def map_structure(x):
