@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import FloatProperty, EnumProperty, BoolProperty, StringProperty
+from bpy.props import FloatProperty, EnumProperty, BoolProperty, StringProperty, IntProperty
 
 
 control_images = (('Auto', 'Auto', ''),
@@ -9,8 +9,8 @@ control_images = (('Auto', 'Auto', ''),
                 ('Texture', 'Texture', ''))
 
 tiling_axes = (('BOTH', 'BOTH', ''),
-               ('X', 'X', ''),
-               ('Y', 'Y', ''))
+               ('U', 'U', ''),
+               ('V', 'V', ''))
 
 def get_active_modifiers(self, context):
     obj = context.object
@@ -19,7 +19,7 @@ def get_active_modifiers(self, context):
         if mod.name[:4]=="heph":
             list.append((mod.name, mod.name, ""))
     if len(list)==0:
-        return [('', '', '')]
+        return [("0", "", "Create a modifier first.")]
     return list
 
 def get_internal_images(self, context):
@@ -74,10 +74,9 @@ attributes = {
     "auto_smoothing": BoolProperty(name="Auto Edge Smoothing",
                                    default=False,
                                    description="Automatic smoothing of displacement values towards edges of UV islands."),
-    "smooth_amount": FloatProperty(name="Smoothing",
-                                   default=0.25, min=0., max=1.,
-                                   subtype='PERCENTAGE',
-                                   description="0 for no smoothing, 1 for max smoothing(full displacement only applied at farthest point from all edges)"),
+    "smooth_amount": IntProperty(name="Distance",
+                                   default=6, min=0,
+                                   description="Distance from vertex group's edges to smooth out."),
     "disp_strength": FloatProperty(name="Strength",
                                    default=1.,
                                    description="Strength multiplier of displacement distance."),

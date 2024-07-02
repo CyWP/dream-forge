@@ -30,72 +30,42 @@ from .. import api
 def _validate_displacement(context):
     return True
 
-def auto_smooth(context, vg_name):
+def auto_smooth(context):
     obj = context.object
     dat = obj.data
     heph_props = context.scene.hephaestus_props
-    smooth_factor = heph_props.smooth_amount
+    num_iters = heph_props.smooth_amount
+    weights = (-(np.cos(np.linspace(0, np.pi, num_iters+2)))[1:-1]+1)/2
     vgi = obj.vertex_groups[heph_props.vertex_group].index
+    vi = set([v.index for v in dat.vertices if vgi in [vg.group for vg in v.groups]])
+    base_vg = heph_props.vertex_group
+    vg_name = f"{base_vg}_smooth_{heph_props.smooth_amount}"
+    if vg_name in obj.vertex_groups:
+        return vg_name
+    else:
+        smoothed_vg = obj.vertex_groups.new(name=vg_name)
 
+    edges = dat.edges  
+    for i in range(num_iters):
+        iv = copy.copy(vi)
+        etemp = []
+        ev = []
+        for edge in edges:
+            if edge.vertices[0] in vi:
+                if edge.vertices[1] not in vi:
+                    ev.append(edge.vertices[0])
+                    iv.discard(edge.vertices[0])
+                else:
+                    etemp.append(edge)
+            elif edge.vertices[1] in vi:
+                ev.append(edge.vertices[1])
+                iv.discard(edge.vertices[1])        
+        ev = list(set(ev))
+        edges = etemp
+        vi = iv
+        smoothed_vg.add(ev, weights[i], 'REPLACE')
+    smoothed_vg.add(list(vi), 1, 'REPLACE')   
     return vg_name
-'''def auto_smooth(context, vg_name):
-    obj = context.object
-    dat = obj.data
-    heph_props = context.scene.hephaestus_props
-    smooth_factor = heph_props.smooth_amount
-    vgi = obj.vertex_groups[heph_props.vertex_group].index
-
-    #get all vertices in vertex group
-    vg = [ v.index for v in dat.vertices if vgi in [ vg.group for vg in v.groups ] ]
-    print(1)
-    #Map vertices to their neighbours
-    map = [set() for _ in range(len(dat.vertices))]
-    for edge in dat.edges:
-        if edge.vertices[0] in vg:
-            map[edge.vertices[0]].add(edge.vertices[1])
-        if edge.vertices[1] in vg:
-            map[edge.vertices[1]].add(edge.vertices[0])
-    print(2)
-    #define vertices on edge of vertex group
-    #edge_verts = [v for v in vg if [neighbor not in vg for neighbor in map[v.index]].any()]
-    edge_verts = [v for v in vg if any(neighbor not in vg for neighbor in map[v])]
-    print(3)
-    #initialize edge vertices' distances to 0
-    distances = [0 if i in edge_verts else float('inf') for i in range(len(dat.vertices)) ]
-    print(4)
-    #record min distance from edge for each
-    #start at edge, set neighbours distance f smaller, do the same with neighbours
-    active_verts = edge_verts
-    updates = True
-    #loop until weights are no longer updated, breadth-first search
-    i=0
-    while updates:
-        print(f'loop {i}')
-        i+=1
-        updates = False
-        new_verts = set()
-        for v in active_verts:
-            for neighbor in [adj for adj in map[v] if adj in vg]:
-                new_verts.add(neighbor)
-                new_dist = distances[v]+np.linalg.norm(dat.vertices[neighbor].co-dat.vertices[v].co)
-                if new_dist < distances[neighbor]:
-                    updates = True
-                    distances[neighbor] = new_dist
-        active_verts = new_verts
-    print(5)
-    distances = [0 if dist==float('inf') else dist for dist in distances]
-    #make new vg as copy of original oen with new weights
-    smoothed_vg = obj.vertex_groups.new(name=vg_name)
-    print(6)
-    #create weights list from list of distances
-    max_dist = max(distances)
-    threshold = max_dist*smooth_factor
-    weights = [-0.5*np.cos((np.pi*dist)/(threshold))+0.5 if dist<threshold else 1 for dist in [distances[v] for v in vg]]
-    print(weights)
-    print(distances)
-    smoothed_vg.add([v.index for v in vg], weights, 'ADD')
-    
-    return vg_name'''
 
 def dream_texture_displacement_panels():
 
@@ -195,7 +165,7 @@ class UpdateDisplacement(bpy.types.Operator):
     def poll(cls, context):
         obj = context.object
         heph_props = context.scene.hephaestus_props
-        return heph_props.active_modifier not in (None, '')#No clue what it's actually returning, this works though
+        return heph_props.active_modifier.strip() not in (None, "", "0")
     
     def execute(self, context):
         obj = context.object
@@ -246,13 +216,8 @@ class DisplaceDreamtexture(bpy.types.Operator):
 
         #TODO: implement auto uv unwrapping     
 
-        if(heph_props.auto_smoothing):
-            vg_name = f"smooth_{heph_props.vertex_group}_{int(heph_props.smooth_amount*100)}"
-            if vg_name not in obj.vertex_groups:
-                mod.vertex_group = auto_smooth(context, vg_name=vg_name)
-
         #Create empty texture of correct size
-        tex = bpy.data.textures.new(name=f'heph_{int(time.time()*100)}', type='IMAGE')
+        tex = bpy.data.textures.new(name=f'heph_{int(time.time()*100)}', type='IMAGE') #TODO: utils for generating names
         tex_img = bpy.data.images.new(name=tex.name, width=dream_props.width, height=dream_props.height)
         tex.image = tex_img
 
@@ -264,7 +229,7 @@ class DisplaceDreamtexture(bpy.types.Operator):
         mod.mid_level = heph_props.disp_midlevel
         mod.texture_coords = 'UV'
         mod.uv_layer = heph_props.uv_map
-        mod.vertex_group = heph_props.vertex_group
+        mod.vertex_group = auto_smooth(context) if heph_props.auto_smoothing else heph_props.vertex_group
         mod.texture = tex
         
         #load direction image
@@ -285,9 +250,11 @@ class DisplaceDreamtexture(bpy.types.Operator):
         def step_callback(progress: List[api.GenerationResult]) -> bool:
             nonlocal tex_img
             context.scene.dream_textures_progress = progress[-1].progress
+            context.scene.dream_textures_info = f"Step {progress[-1].progress}/{progress[-1].total}"
             image = api.GenerationResult.tile_images(progress)
             if tex_img is None:
                 tex_img = bpy.data.images.new(name=tex.name, width=image.shape[1], height=image.shape[0])
+            tex_img.name = f"Step {progress[-1].progress}/{progress[-1].total}"
             tex_img.pixels[:] = image.ravel()
             tex_img.update()
             tex.image = tex_img
