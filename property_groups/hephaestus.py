@@ -16,7 +16,7 @@ def get_active_modifiers(self, context):
     obj = context.object
     list = []
     for mod in obj.modifiers:
-        if mod.name[:4]=="heph":
+        if mod.name[:5]=="heph_":
             list.append((mod.name, mod.name, ""))
     if len(list)==0:
         return [("0", "", "Create a modifier first.")]

@@ -1,11 +1,5 @@
 import bpy
-import bmesh
-import gpu
-import gpu.texture
 from gpu_extras.batch import batch_for_shader
-import bmesh
-from bpy_extras import view3d_utils
-import mathutils
 import numpy as np
 from typing import List
 
@@ -20,52 +14,16 @@ from ..generator_process import Generator
 from ..generator_process.models import ModelType
 from ..api.models import FixItError
 import tempfile
-import time
 import copy
 
-from ..engine.annotations.depth import render_depth_map
+from ..heph_utils.smooth_vertex_group import auto_smooth
+from ..heph_utils.gen_names import gen_mod_name
+from ..heph_utils.uv_layout import auto_uv_map, uv_to_img
 
 from .. import api
 
 def _validate_displacement(context):
     return True
-
-def auto_smooth(context):
-    obj = context.object
-    dat = obj.data
-    heph_props = context.scene.hephaestus_props
-    num_iters = heph_props.smooth_amount
-    weights = (-(np.cos(np.linspace(0, np.pi, num_iters+2)))[1:-1]+1)/2
-    vgi = obj.vertex_groups[heph_props.vertex_group].index
-    vi = set([v.index for v in dat.vertices if vgi in [vg.group for vg in v.groups]])
-    base_vg = heph_props.vertex_group
-    vg_name = f"{base_vg}_smooth_{heph_props.smooth_amount}"
-    if vg_name in obj.vertex_groups:
-        return vg_name
-    else:
-        smoothed_vg = obj.vertex_groups.new(name=vg_name)
-
-    edges = dat.edges  
-    for i in range(num_iters):
-        iv = copy.copy(vi)
-        etemp = []
-        ev = []
-        for edge in edges:
-            if edge.vertices[0] in vi:
-                if edge.vertices[1] not in vi:
-                    ev.append(edge.vertices[0])
-                    iv.discard(edge.vertices[0])
-                else:
-                    etemp.append(edge)
-            elif edge.vertices[1] in vi:
-                ev.append(edge.vertices[1])
-                iv.discard(edge.vertices[1])        
-        ev = list(set(ev))
-        edges = etemp
-        vi = iv
-        smoothed_vg.add(ev, weights[i], 'REPLACE')
-    smoothed_vg.add(list(vi), 1, 'REPLACE')   
-    return vg_name
 
 def dream_texture_displacement_panels():
 
@@ -175,7 +133,7 @@ class UpdateDisplacement(bpy.types.Operator):
         mod.strength = heph_props.disp_strength
         mod.mid_level = heph_props.disp_midlevel
         mod.uv_layer = heph_props.uv_map
-        mod.vertex_group = heph_props.vertex_group 
+        mod.vertex_group = auto_smooth(context) if heph_props.auto_smoothing else  heph_props.vertex_group 
         return {'FINISHED'}  
 
 class DisplaceDreamtexture(bpy.types.Operator):
@@ -212,36 +170,47 @@ class DisplaceDreamtexture(bpy.types.Operator):
             return None
         
         bpy.types.Scene.displace_progress = bpy.props.IntProperty(name="", default=0, min=0, max=context.scene.dream_textures_project_prompt.steps, update=step_progress_update)
-        context.scene.displace_info = "Starting..."
-
-        #TODO: implement auto uv unwrapping     
+        context.scene.displace_info = "Starting..."  
 
         #Create empty texture of correct size
-        tex = bpy.data.textures.new(name=f'heph_{int(time.time()*100)}', type='IMAGE') #TODO: utils for generating names
+        gen_name = gen_mod_name(context)
+        try:
+            tex = bpy.data.textures[gen_name]
+        except:
+            tex = bpy.data.textures.new(name=gen_name, type='IMAGE')
         tex_img = bpy.data.images.new(name=tex.name, width=dream_props.width, height=dream_props.height)
         tex.image = tex_img
 
         #Create displacement modifier(disabled)
-        mod = obj.modifiers.new(name=tex.name, type='DISPLACE')
+        mod = obj.modifiers.new(name=gen_name, type='DISPLACE')
         mod.show_viewport = False
         mod.show_render = False
         mod.strength = heph_props.disp_strength
         mod.mid_level = heph_props.disp_midlevel
         mod.texture_coords = 'UV'
         mod.uv_layer = heph_props.uv_map
-        mod.vertex_group = auto_smooth(context) if heph_props.auto_smoothing else heph_props.vertex_group
+        if heph_props.auto_smoothing:
+            context.scene.dream_textures_info = f"Smoothing Vertex Weights"
+            mod.vertex_group = auto_smooth(context)
+            context.scene.dream_textures_info = f"Starting..."
+        else:
+            mod.vertex_group = heph_props.vertex_group
         mod.texture = tex
         
         #load direction image
         if heph_props.control_image == 'Internal':
-            ctrl_img = bpy.data.images.load(heph_props.internal_image)
+            ctrl_img = bpy.data.images.load(heph_props.internal_image, check_existing=True)
         elif heph_props.control_image == 'External':
-            ctrl_img = bpy.data.images.load(heph_props.external_image)
-        elif  heph_props.control_image == 'Texture':
+            ctrl_img = bpy.data.images.load(heph_props.external_image, check_existing=True)
+        elif heph_props.control_image == 'Texture':
             ctrl_img = bpy.data.textures[heph_props.texture_image].image
+        elif heph_props.control_image == 'Auto':
+            ctrl_img = bpy.data.images.load(uv_to_img(context), check_existing=True)
         else:
-            ctrl_img = bpy.data.images.new(name=f'{tex.name}_ctrl', width=dream_props.width, height=dream_props.height)
-        #TODO: Implement Auto image
+            try:
+                ctrl_img = bpy.data.images.load(f'{tex.name}_ctrl', check_existing=True)
+            except:
+                ctrl_img = bpy.data.images.new(name=f'{tex.name}_ctrl', width=dream_props.width, height=dream_props.height)
             
         if(heph_props.tile_image):
             #TODO: Scale UV
@@ -293,7 +262,7 @@ class DisplaceDreamtexture(bpy.types.Operator):
         CancelGenerator.should_continue = True # reset global cancellation state
     
         image = None
-        ctrl_img = np.asarray(ctrl_img.pixels).reshape((ctrl_img.size[0], ctrl_img.size[1], -1)) if ctrl_img is not None else None
+        ctrl_img = np.asarray(ctrl_img.pixels).reshape((ctrl_img.size[0], ctrl_img.size[1], -1))
         if ctrl_img.shape[-1] == 3: #Ensure images are rgba
             ctrl_img = np.stack([ctrl_img, np.ones(shape=(ctrl_img.size[0], ctrl_img.size[1], -1))])
         if context.scene.dream_textures_project_use_control_net:
