@@ -3,6 +3,8 @@ import tempfile
 import os
 import numpy as np
 
+from ..property_groups.hephaestus import unwrap_options
+
 def auto_uv_map(context) -> str:
 
     obj = context.active_object
@@ -11,9 +13,8 @@ def auto_uv_map(context) -> str:
 
     vgi = obj.vertex_groups[heph_props.vertex_group].index
     action = heph_props.uv_map
-    unwrap = action in "Auto Unwrap"
-    project = action in "Smart Island Project"
-
+    unwrap = action == unwrap_options[0][0]
+    project = action == unwrap_options[1][0]
     if not unwrap and not project:
         raise ValueError(f"Invalid action: {action} seems to be an existing UV map for object {obj.name}.")
     
@@ -37,11 +38,11 @@ def auto_uv_map(context) -> str:
                 
     #Create or load UV map and make active
     uv_name = "auto_unwrap" if unwrap else "auto_project"
-    if uv_name in obj.uv_layers:
-        uv_map = obj.uv_layers.get(uv_name)
+    if uv_name in dat.uv_layers:
+        uv_map = dat.uv_layers.get(uv_name)
     else:
-        uv_map = obj.data.uv_layers.new(name=uv_name)
-    obj.data.uv_layers.active = uv_map
+        uv_map = dat.uv_layers.new(name=uv_name)
+    dat.uv_layers.active = uv_map
 
     # Switch back to Edit mode, select vertex group's vertices in uv editor, unwrap
     bpy.ops.object.mode_set(mode='EDIT')
@@ -69,19 +70,19 @@ def uv_to_img(context, uv_map:str=None) -> str:
     obj = context.active_object
     dat = obj.data
     heph_props = context.scene.hephaestus_props
+    current_mode = context.object.mode
 
     if uv_map is None:
         uv_map = heph_props.uv_map
-    if uv_map not in obj.data.uv_layers:
+    if uv_map not in dat.uv_layers.keys():
         raise ValueError(f"{uv_map} is not a valid UV map name for object {obj.name}.")
     
     #save previous uv to set it back afterwards, set to right one
-    prev_uv = obj.data.uv_layers.active
-    obj.data.uv_layers.active = obj.data.uv_layers.get(uv_map)
-
-    temp = tempfile.NamedTemporaryFile(suffix=".png")
-    filename = temp.name
-    bpy.ops.uv.export_layout(filepath=filename, export_all=True, modified=True, opacity=1, check_existing=False)
+    prev_uv = dat.uv_layers.active
+    dat.uv_layers.active = dat.uv_layers.get(uv_map)
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp:
+        filename = temp.name
+        bpy.ops.uv.export_layout(filepath=filename, export_all=True, modified=True, opacity=1, check_existing=False)
 
     #Load and rename exported image
     img = bpy.data.images.load(filename) 
@@ -97,6 +98,7 @@ def uv_to_img(context, uv_map:str=None) -> str:
     img.pixels = pixels #saves it to internal img
 
     #reset active uv and delete temp image file afterwards
-    obj.data.uv_layers.active = prev_uv
+    dat.uv_layers.active = prev_uv
     os.remove(filename)
+    bpy.ops.object.mode_set(mode=current_mode)
     return img.name

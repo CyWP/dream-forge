@@ -13,12 +13,12 @@ from .notify_result import NotifyResult
 from ..generator_process import Generator
 from ..generator_process.models import ModelType
 from ..api.models import FixItError
-import tempfile
-import copy
 
 from ..heph_utils.smooth_vertex_group import auto_smooth
 from ..heph_utils.gen_names import gen_mod_name
 from ..heph_utils.uv_layout import auto_uv_map, uv_to_img
+
+from ..property_groups.hephaestus import unwrap_options, ctrl_img_options
 
 from .. import api
 
@@ -160,6 +160,7 @@ class DisplaceDreamtexture(bpy.types.Operator):
         obj = context.object
         heph_props = context.scene.hephaestus_props
         dream_props = context.scene.dream_textures_project_prompt
+        wm = bpy.context.window_manager
 
         # Setup the progress indicator
         def step_progress_update(self, context):
@@ -172,8 +173,8 @@ class DisplaceDreamtexture(bpy.types.Operator):
         bpy.types.Scene.displace_progress = bpy.props.IntProperty(name="", default=0, min=0, max=context.scene.dream_textures_project_prompt.steps, update=step_progress_update)
         context.scene.displace_info = "Starting..."  
 
-        #Create empty texture of correct size
         gen_name = gen_mod_name(context)
+        #Create empty texture of correct size
         try:
             tex = bpy.data.textures[gen_name]
         except:
@@ -188,24 +189,30 @@ class DisplaceDreamtexture(bpy.types.Operator):
         mod.strength = heph_props.disp_strength
         mod.mid_level = heph_props.disp_midlevel
         mod.texture_coords = 'UV'
-        mod.uv_layer = heph_props.uv_map
         if heph_props.auto_smoothing:
             context.scene.dream_textures_info = f"Smoothing Vertex Weights"
             mod.vertex_group = auto_smooth(context)
-            context.scene.dream_textures_info = f"Starting..."
+            #context.scene.dream_textures_info = f"Starting..."
         else:
             mod.vertex_group = heph_props.vertex_group
         mod.texture = tex
+        #Generate uv map if need be
+        uv_map = auto_uv_map(context) if any([heph_props.uv_map in option[0] for option in unwrap_options]) else heph_props.uv_map
+        mod.uv_layer = uv_map
         
         #load direction image
-        if heph_props.control_image == 'Internal':
-            ctrl_img = bpy.data.images.load(heph_props.internal_image, check_existing=True)
-        elif heph_props.control_image == 'External':
+        if heph_props.control_image == ctrl_img_options[0][0]:
+            print(ctrl_img_options[0], 0)
+            ctrl_img = bpy.data.images.get(uv_to_img(context, uv_map))
+        elif heph_props.control_image == ctrl_img_options[1][0]:
+            print(ctrl_img_options[1], 1)
             ctrl_img = bpy.data.images.load(heph_props.external_image, check_existing=True)
-        elif heph_props.control_image == 'Texture':
+        elif heph_props.control_image == ctrl_img_options[2][0]:
+            print(ctrl_img_options[2], 2)
+            ctrl_img = bpy.data.images.get(heph_props.internal_image)
+        elif heph_props.control_image == ctrl_img_options[3][0]:
+            print(ctrl_img_options[3], 3)
             ctrl_img = bpy.data.textures[heph_props.texture_image].image
-        elif heph_props.control_image == 'Auto':
-            ctrl_img = bpy.data.images.load(uv_to_img(context), check_existing=True)
         else:
             try:
                 ctrl_img = bpy.data.images.load(f'{tex.name}_ctrl', check_existing=True)

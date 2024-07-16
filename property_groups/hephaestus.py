@@ -1,16 +1,20 @@
 import bpy
 from bpy.props import FloatProperty, EnumProperty, BoolProperty, StringProperty, IntProperty
+from copy import copy
 
 
-control_images = (('Auto', 'Auto', ''),
-                ('None', 'None', ''),
-                ('External', 'External', ''),
-                ('Internal', 'Internal', ''),
-                ('Texture', 'Texture', ''))
+ctrl_img_options = (('Auto', 'Auto', ''),
+                    ('External', 'External', ''),
+                    ('Internal', 'Internal', ''),
+                    ('Texture', 'Texture', ''),
+                    ('None', 'None', ''))
 
 tiling_axes = (('BOTH', 'BOTH', ''),
                ('U', 'U', ''),
                ('V', 'V', ''))
+
+unwrap_options = [('Auto Unwrap', 'Auto Unwrap', ''),
+              ('Smart Island Project', 'Smart Island Project', '')]
 
 def get_active_modifiers(self, context):
     obj = context.object
@@ -35,8 +39,7 @@ def get_uv_maps(self, context):
     
     obj = obj.data
     
-    uvlist = [('Auto Unwrap', 'Auto Unwrap', ''),
-              ('Smart Island Project', 'Smart Island Project', '')]
+    uvlist = copy(unwrap_options)
     for uv in obj.uv_layers:
         uvlist.append((uv.name, uv.name, ''))
 
@@ -85,7 +88,7 @@ attributes = {
                                    description="Threshold dictating inwards or outwards displacement."),
     #Image
     "control_image": EnumProperty(name="Source",
-                                 items=control_images,
+                                 items=ctrl_img_options,
                                  description="Provenance of image for texture generation control."),
     "internal_image":EnumProperty(name="Image",
                                   items=get_internal_images),
