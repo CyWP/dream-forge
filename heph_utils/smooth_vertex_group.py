@@ -18,7 +18,8 @@ def auto_smooth(context, vg_name:str=None, update=False) -> str:
         raise ValueError(f"{vg_name} is not a valid vertex group for object {obj.name}.")
     
     base_name = vg_name
-    vg_name = f"{vg_name}{SMOOTHED}{num_iters}"
+    if SMOOTHED not in vg_name:
+        vg_name = f"{vg_name}{SMOOTHED}{num_iters}"
 
     if vg_name in obj.vertex_groups:
         if not update:

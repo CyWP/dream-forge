@@ -202,22 +202,19 @@ class DisplaceDreamtexture(bpy.types.Operator):
         
         #load direction image
         if heph_props.control_image == ctrl_img_options[0][0]:
-            print(ctrl_img_options[0], 0)
             ctrl_img = bpy.data.images.get(uv_to_img(context, uv_map))
         elif heph_props.control_image == ctrl_img_options[1][0]:
-            print(ctrl_img_options[1], 1)
-            ctrl_img = bpy.data.images.load(heph_props.external_image, check_existing=True)
+            ctrl_img = bpy.data.images.get(heph_props.external_image)
+            if not ctrl_img:
+                ctrl_img = bpy.data.images.load(heph_props.external_image)
         elif heph_props.control_image == ctrl_img_options[2][0]:
-            print(ctrl_img_options[2], 2)
             ctrl_img = bpy.data.images.get(heph_props.internal_image)
         elif heph_props.control_image == ctrl_img_options[3][0]:
-            print(ctrl_img_options[3], 3)
             ctrl_img = bpy.data.textures[heph_props.texture_image].image
         else:
-            try:
-                ctrl_img = bpy.data.images.load(f'{tex.name}_ctrl', check_existing=True)
-            except:
-                ctrl_img = bpy.data.images.new(name=f'{tex.name}_ctrl', width=dream_props.width, height=dream_props.height)
+            ctrl_img = bpy.data.images.get(f"{tex.name}_ctrl")
+            if not ctrl_img:
+                ctrl_img = bpy.data.images.new(name=f"{tex.name}_ctrl")
             
         if(heph_props.tile_image):
             #TODO: Scale UV

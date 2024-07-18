@@ -85,8 +85,14 @@ def uv_to_img(context, uv_map:str=None) -> str:
         bpy.ops.uv.export_layout(filepath=filename, export_all=True, modified=True, opacity=1, check_existing=False)
 
     #Load and rename exported image
-    img = bpy.data.images.load(filename) 
-    img.name = f"{obj.name}_{uv_map}_uv"
+    img_name = f"{obj.name}_{uv_map}_uv"
+    img = bpy.data.images.get(img_name)
+    if img:
+        img.filepath = filename
+        img.reload()
+    else:
+        img = bpy.data.images.load(filename) 
+        img.name = img_name
 
     #make black and white form for generator
     pixels = np.array(img.pixels[:])
@@ -102,3 +108,5 @@ def uv_to_img(context, uv_map:str=None) -> str:
     os.remove(filename)
     bpy.ops.object.mode_set(mode=current_mode)
     return img.name
+
+def scale_uv
