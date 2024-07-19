@@ -103,9 +103,12 @@ attributes = {
     "tile_axes": EnumProperty(name="Axes",
                                 items=tiling_axes,
                                 description="Axis on which image will be repeated"),
-    "tile_num": FloatProperty(name="Factor",
+    "tile_x": FloatProperty(name="Tile X",
                               default=2., min=0,
-                              description="Repetitions of image on UV map.")
+                              description="Repetitions of image on UV map on x-axis"),
+    "tile_y": FloatProperty(name="Tile Y",
+                              default=2., min=0,
+                              description="Repetitions of image on UV map on y-axis")
 }
 
 HephProps = type('HephProps', (bpy.types.PropertyGroup,), {

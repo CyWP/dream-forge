@@ -109,4 +109,45 @@ def uv_to_img(context, uv_map:str=None) -> str:
     bpy.ops.object.mode_set(mode=current_mode)
     return img.name
 
-def scale_uv
+TILE = "_tiled_"
+
+def scale_uv(context, uv_name:str=None, x:float=None, y:float=None):
+
+    obj = context.active_object
+    dat = obj.data
+    heph_props = context.scene.hephaestus_props
+    current_mode = context.object.mode
+    current_area = context.area.ui_type
+    current_uv = dat.uv_layers.active
+    uv_name = heph_props.uv_map if uv_name is None else uv_name
+    scale_x = heph_props.scale_x if x is None else x
+    scale_y = heph_props.scale_Y if y is None else y
+    new_name = f"{uv_name}{TILE}{scale_x:.2}x{scale_y:.2}"
+
+    if uv_name not in dat.uv_layers:
+        raise ValueError(f"{uv_name} not found in UV maps for {obj.name}.")
+    
+    #copy data to new uv_map
+    uv_map = dat.uv_layers[uv_name]
+    new_map = dat.uv_layers[new_name] if new_name in dat.uv_layers else dat.uv_layers.new(name=new_name)   
+    for loop in obj.data.loops:
+        new_map.data[loop.index].uv = uv_map.data[loop.index].uv
+    dat.uv_layers.active = new_map
+  
+    # Switch to Object mode if not already in it (required to change mode to Edit)
+    if context.object.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')   
+    bpy.ops.object.mode_set(mode='EDIT')       
+    bpy.ops.mesh.select_mode(type="VERT")
+    # Select all vertices
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.select_all(action='SELECT')
+    #Scale
+    bpy.context.area.ui_type = 'UV'
+    bpy.ops.transform.resize(value=(scale_x, scale_y, 0), constraint_axis=(True, True, False))
+
+    # Revert back to the original state
+    bpy.context.area.ui_type = current_area
+    bpy.ops.object.mode_set(mode=current_mode)
+    dat.uv_layers.active = current_uv
+    return new_name
