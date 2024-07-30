@@ -9,10 +9,6 @@ ctrl_img_options = (('Auto', 'Auto', ''),
                     ('Texture', 'Texture', ''),
                     ('None', 'None', ''))
 
-tiling_axes = (('BOTH', 'BOTH', ''),
-               ('U', 'U', ''),
-               ('V', 'V', ''))
-
 unwrap_options = [('Auto Unwrap', 'Auto Unwrap', ''),
               ('Smart Island Project', 'Smart Island Project', '')]
 
@@ -29,7 +25,7 @@ def get_active_modifiers(self, context):
 def get_internal_images(self, context):
     if bpy.data.images is None:
         return [('', '', '')]
-    return [(img.filepath, img.filepath, '') for img in bpy.data.images]
+    return [(img.filepath, img.filepath, 'IMAGE_DATA') for img in bpy.data.images]
 
 def get_uv_maps(self, context):
     obj = context.object
@@ -62,11 +58,26 @@ def get_vertex_groups(self, context):
 
     return vglist
 
+def update_active_modifier(self, context):
+    heph_props = context.scene.hephaestus_props
+    mod = context.object.modifiers[heph_props.active_modifier]
+    heph_props.edit_disp_strength = mod.strength
+    heph_props.edit_midlevel = mod.midlevel
+
+def update_disp_strength(self, context):
+    heph_props = context.scene.hephaestus_props
+    mod = context.object.modifiers[heph_props.active_modifier]
+    if mod is not None:
+        mod.strength = heph_props.edit_disp_strength
+
+def update_disp_midlevel(self, context):
+    heph_props = context.scene.hephaestus_props
+    mod = context.object.modifiers[heph_props.active_modifier]
+    if mod:
+        mod.mid_level = heph_props.edit_disp_midlevel
+
 attributes = {
     #Scene
-    "active_modifier": EnumProperty(name="",
-                                     items=get_active_modifiers,
-                                     description="Modifier to update"), 
     #Mesh
     "vertex_group": EnumProperty(name="Vertex Group",
                                  items=get_vertex_groups,
@@ -85,7 +96,25 @@ attributes = {
                                    description="Strength multiplier of displacement distance."),
     "disp_midlevel": FloatProperty(name="Midlevel",
                                    default=0.5, min=0., max=1.,
+                                   subtype='FACTOR',
                                    description="Threshold dictating inwards or outwards displacement."),
+    #Edit
+    "active_modifier": EnumProperty(name="",
+                                     items=get_active_modifiers,
+                                     description="Modifier to update",
+                                     update=update_active_modifier),
+    "edit_disp_strength": FloatProperty(name="Strength",
+                                   default=1.,
+                                   description="Strength multiplier of displacement distance.",
+                                   update = update_disp_strength),
+    "edit_disp_midlevel": FloatProperty(name="Midlevel",
+                                   default=0.5, min=0., max=1.,
+                                   subtype='FACTOR',
+                                   description="Threshold dictating inwards or outwards displacement.",
+                                   update=update_disp_midlevel),
+    "edit_smooth_amount": IntProperty(name="Distance",
+                                default=6, min=0,
+                                description="Distance from vertex group's edges to smooth out."),
     #Image
     "control_image": EnumProperty(name="Source",
                                  items=ctrl_img_options,
@@ -96,19 +125,7 @@ attributes = {
                                      default="path/to/image",
                                      subtype='FILE_PATH'),
     "texture_image": EnumProperty(name="Image",
-                                  items=get_textures),
-    "tile_image": BoolProperty(name="Tile",
-                               default=False,
-                               description="Tile generated image across UV map"),
-    "tile_axes": EnumProperty(name="Axes",
-                                items=tiling_axes,
-                                description="Axis on which image will be repeated"),
-    "tile_x": FloatProperty(name="Tile X",
-                              default=2., min=0,
-                              description="Repetitions of image on UV map on x-axis"),
-    "tile_y": FloatProperty(name="Tile Y",
-                              default=2., min=0,
-                              description="Repetitions of image on UV map on y-axis")
+                                  items=get_textures)
 }
 
 HephProps = type('HephProps', (bpy.types.PropertyGroup,), {

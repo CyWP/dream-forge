@@ -6,7 +6,7 @@ from typing import List
 from .view_history import ImportPromptFile
 from .open_latest_version import OpenLatestVersion, is_force_show_download, new_version_available
 
-from ..ui.panels.hephaestus import create_panel, prompt_panel, size_panel, advanced_panel, mesh_panel, control_panel
+from ..ui.panels.hephaestus import create_panel, prompt_panel, size_panel, advanced_panel, mesh_panel, control_panel, edit_panel
 from .dream_texture import CancelGenerator, ReleaseGenerator
 from .notify_result import NotifyResult
 
@@ -39,8 +39,7 @@ def dream_texture_displacement_panels():
         def poll(cls, context):
             if cls.bl_space_type == 'NODE_EDITOR':
                 return context.area.ui_type == "ShaderNodeTree" or context.area.ui_type == "CompositorNodeTree"
-            else:
-                return True
+            return True
             
         def draw_header_preset(self, context):
             layout = self.layout
@@ -108,39 +107,16 @@ def dream_texture_displacement_panels():
                     disabled_row.prop(context.scene, 'dream_textures_progress', slider=True)
                     disabled_row.enabled = False
                 row.operator(ReleaseGenerator.bl_idname, icon="X", text="")
-
                 
         return ActionsPanel
     yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, actions_panel, get_prompt)
-
-class UpdateDisplacement(bpy.types.Operator):
-    bl_idname = "shade.dream_texture_displace_update"
-    bl_label = "Update Mesh"
-    bl_description = "Update displacement parameters on mesh"
-    bl_options = {'REGISTER'}
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.object
-        heph_props = context.scene.hephaestus_props
-        return heph_props.active_modifier.strip() not in (None, "", "0")
-    
-    def execute(self, context):
-        obj = context.object
-        heph_props = context.scene.hephaestus_props
-        mod = obj.modifiers[heph_props.active_modifier]
-
-        mod.strength = heph_props.disp_strength
-        mod.mid_level = heph_props.disp_midlevel
-        mod.uv_layer = heph_props.uv_map
-        mod.vertex_group = auto_smooth(context) if heph_props.auto_smoothing else  heph_props.vertex_group 
-        return {'FINISHED'}  
+    yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_displacement.bl_idname, edit_panel, get_heph_props)
 
 class DisplaceDreamtexture(bpy.types.Operator):
     bl_idname = "shade.dream_texture_displace"
     bl_label = "Displace using Dream Texture"
     bl_description = "Generate displacement using Stable Diffusion"
-    bl_options = {'REGISTER'}
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
@@ -191,7 +167,7 @@ class DisplaceDreamtexture(bpy.types.Operator):
         mod.texture_coords = 'UV'
         if heph_props.auto_smoothing:
             context.scene.dream_textures_info = f"Smoothing Vertex Weights"
-            mod.vertex_group = auto_smooth(context)
+            mod.vertex_group = auto_smooth(context, vg_name=heph_props.vertex_group, num_iters=heph_props.smooth_amount)
             #context.scene.dream_textures_info = f"Starting..."
         else:
             mod.vertex_group = heph_props.vertex_group

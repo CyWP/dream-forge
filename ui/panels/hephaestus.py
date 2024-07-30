@@ -12,6 +12,8 @@ from ...prompt_engineering import *
 from ...operators.dream_texture import DreamTexture, ReleaseGenerator, CancelGenerator, get_source_image
 from ...operators.open_latest_version import OpenLatestVersion, is_force_show_download, new_version_available
 from ...operators.view_history import ImportPromptFile
+from ...operators.smooth_vertex_group import SmoothVertexGroup
+from ...operators.viewer_to_disp import ApplyViewerNode
 from ..space_types import SPACE_TYPES
 from ...property_groups.dream_prompt import DreamPrompt, backend_options
 from ...generator_process.actions.prompt_to_image import Optimizations
@@ -56,8 +58,10 @@ def mesh_panel(sub_panel, space_type, get_prompt):
             obj = context.object
             props = get_prompt(context)
 
-            layout.prop(props, 'vertex_group')
-            layout.prop(props, 'uv_map')
+            row = layout.row()
+            row.prop(props, 'vertex_group')
+            row = layout.row()
+            row.prop(props, 'uv_map')
             row = layout.row()
             row.prop(props, 'auto_smoothing')
             if props.auto_smoothing:
@@ -65,11 +69,35 @@ def mesh_panel(sub_panel, space_type, get_prompt):
             row=layout.row()
             row.prop(props, 'disp_strength')
             row.prop(props, 'disp_midlevel')
-            row=layout.row()
-            row.prop(props, 'active_modifier')
-            row.operator("shade.dream_texture_displace_update")
 
     return MeshPanel
+
+def edit_panel(sub_panel, space_type, get_prompt):
+    class EditPanel(sub_panel):
+        """Create a subpanel for editing displacement modifiers"""
+        bl_label = "Edit"
+        bl_idname = f"DREAM_PT_dream_displacement_panel_edit_{space_type}"
+
+        def draw_header_preset(self, context):
+            props = get_prompt(context)
+            layout = self.layout
+            layout.prop(props, 'active_modifier')
+
+        def draw(self, context):
+            props = get_prompt(context)
+            if props.active_modifier in context.object.modifiers:
+                layout = self.layout
+                row = layout.row()
+                row.prop(props, 'edit_disp_strength')
+                row = layout.row()
+                row.prop(props, 'edit_disp_midlevel')
+                row = layout.row()
+                row.prop(props, 'edit_smooth_amount')
+                row.operator(SmoothVertexGroup.bl_idname, text="Update Smoothing", icon="SMOOTHCURVE")
+                row = layout.row()
+                row.operator(ApplyViewerNode.bl_idname, text="Apply Viewer Node", icon="IMAGE_PLANE")
+                
+    return EditPanel
 
 def control_panel(sub_panel, space_type, get_prompt):
 
@@ -95,11 +123,6 @@ def control_panel(sub_panel, space_type, get_prompt):
                 layout.prop(props, 'internal_image')
             elif props.control_image == 'Texture':
                 layout.prop(props, 'texture_image')
-            row=layout.row()
-            row.prop(props, "tile_image")
-            if props.tile_image:
-                row.prop(props, 'tile_axes')
-                row.prop(props, 'tile_num')
         
     return ControlPanel
 

@@ -121,7 +121,10 @@ if current_process().name != "__actor__":
         engine.register()
 
         for cls in CLASSES:
-            bpy.utils.register_class(cls)
+            try:
+                bpy.utils.register_class(cls)
+            except Exception as e:
+                raise Exception(f"{str(e)}\n Class:{cls.__name__}")
 
         for tool in TOOLS:
             bpy.utils.register_tool(tool)

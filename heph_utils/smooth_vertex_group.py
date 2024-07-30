@@ -4,22 +4,19 @@ import copy
 
 SMOOTHED = "_smoothed_"
 
-def auto_smooth(context, vg_name:str=None, update=False) -> str:
+def auto_smooth(context, vg_name:str, num_iters:int, update:bool=False) -> str:
     obj = context.object
     dat = obj.data
     heph_props = context.scene.hephaestus_props
-    num_iters = heph_props.smooth_amount
     weights = (-(np.cos(np.linspace(0, np.pi, num_iters+2)))[1:-1]+1)/2
-
-    if vg_name is None:
-        vg_name = heph_props.vertex_group
 
     if vg_name not in obj.vertex_groups:
         raise ValueError(f"{vg_name} is not a valid vertex group for object {obj.name}.")
     
+    if SMOOTHED in vg_name:
+        vg_name = vg_name[:vg_name.find(SMOOTHED)]
     base_name = vg_name
-    if SMOOTHED not in vg_name:
-        vg_name = f"{vg_name}{SMOOTHED}{num_iters}"
+    vg_name = f"{vg_name}{SMOOTHED}{num_iters}"
 
     if vg_name in obj.vertex_groups:
         if not update:
