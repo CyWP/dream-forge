@@ -5,8 +5,9 @@ from .operators.view_history import SCENE_UL_HistoryList, RecallHistoryEntry, Cl
 from .operators.inpaint_area_brush import InpaintAreaBrushActivated
 from .operators.upscale import Upscale
 from .operators.project import ProjectDreamTexture, dream_texture_projection_panels
-from .operators.displace import DisplaceDreamtexture, dream_texture_displacement_panels
+from .operators.displace import DisplaceDreamtexture
 from .operators.viewer_to_disp import ApplyViewerNode
+from .operators.create_uv_img import CreateUvImg
 from .operators.smooth_vertex_group import SmoothVertexGroup
 from .operators.notify_result import NotifyResult
 from .property_groups.control_net import ControlNet, SCENE_UL_ControlNetList, ControlNetsAdd, ControlNetsRemove
@@ -41,6 +42,7 @@ CLASSES = (
     DisplaceDreamtexture,
     ApplyViewerNode,
     SmoothVertexGroup,
+    CreateUvImg,
     
     SCENE_UL_ControlNetList,
     ControlNetsAdd,
@@ -62,7 +64,6 @@ CLASSES = (
     *upscaling.upscaling_panels(),
     *history.history_panels(),
     *dream_texture_projection_panels(),
-    *dream_texture_displacement_panels(),
 )
 
 PREFERENCE_CLASSES = (

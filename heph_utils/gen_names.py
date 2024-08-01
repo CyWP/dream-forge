@@ -1,6 +1,5 @@
 import bpy
-
-PREFIX = "heph_"
+from .constants import PREFIX
 
 def gen_mod_name(context) -> str:
     obj = context.object

@@ -16,7 +16,8 @@ def auto_uv_map(context) -> str:
     unwrap = action == unwrap_options[0][0]
     project = action == unwrap_options[1][0]
     if not unwrap and not project:
-        raise ValueError(f"Invalid action: {action} seems to be an existing UV map for object {obj.name}.")
+        return action
+        #raise ValueError(f"Invalid action: {action} seems to be an existing UV map for object {obj.name}.")
     
     # Store the current mode to revert back later
     current_mode = context.object.mode
@@ -65,7 +66,7 @@ def auto_uv_map(context) -> str:
 
     return uv_name
 
-def uv_to_img(context, uv_map:str=None) -> str:
+def uv_to_img(context, uv_map:str=None, suffix:str="auto") -> str:
 
     obj = context.active_object
     dat = obj.data
@@ -85,7 +86,7 @@ def uv_to_img(context, uv_map:str=None) -> str:
         bpy.ops.uv.export_layout(filepath=filename, export_all=True, modified=True, opacity=1, check_existing=False)
 
     #Load and rename exported image
-    img_name = f"{obj.name}_{uv_map}_uv"
+    img_name = f"{obj.name}_{uv_map}_uv_{suffix}"
     img = bpy.data.images.get(img_name)
     if img:
         img.filepath = filename

@@ -38,6 +38,8 @@ def dream_texture_panels():
             
             def draw_header_preset(self, context):
                 layout = self.layout
+                if space_type == 'VIEW_3D':
+                    layout.prop(context.scene, "dream_context", expand=True)
                 layout.operator(ImportPromptFile.bl_idname, text="", icon="IMPORT")
                 layout.separator()
 

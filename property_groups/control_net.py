@@ -9,7 +9,7 @@ def control_net_options(self, context):
 
 class ControlNet(bpy.types.PropertyGroup):
     control_net: EnumProperty(name="ControlNet", items=control_net_options, description="Specify which ControlNet to use")
-    conditioning_scale: FloatProperty(name="ControlNet Conditioning Scale", default=1.0, description="Increases the strength of the ControlNet's effect")
+    conditioning_scale: FloatProperty(name="ControlNet Conditioning Scale", default=1.0, description="Increases the strength of the ControlNet's effect", min=0, max=1, subtype='FACTOR')
     control_image: PointerProperty(type=bpy.types.Image)
 
 class SCENE_UL_ControlNetList(bpy.types.UIList):

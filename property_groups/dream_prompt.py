@@ -98,11 +98,7 @@ def seed_clamp(self, ctx):
     except (ValueError, OverflowError):
         pass # will get hashed once generated
 
-def get_contexts(self, context):
-    return [("Project", "Project", ""), ("Displace", "Displace", "")]
-
 attributes = {
-    "context": EnumProperty(name="Context", items=get_contexts, description="Choose whether to do projection or displacement."),
     "backend": EnumProperty(name="Backend", items=backend_options, default=1, description="Specify which generation backend to use"),
     "model": EnumProperty(name="Model", items=model_options, description="Specify which model to use for inference", update=_model_update),
     

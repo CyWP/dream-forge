@@ -2,6 +2,7 @@ import bpy
 from bpy.props import FloatProperty, EnumProperty, BoolProperty, StringProperty, IntProperty
 from copy import copy
 
+from ..heph_utils.constants import PREFIX
 
 ctrl_img_options = (('Auto', 'Auto', ''),
                     ('External', 'External', ''),
@@ -16,7 +17,7 @@ def get_active_modifiers(self, context):
     obj = context.object
     list = []
     for mod in obj.modifiers:
-        if mod.name[:5]=="heph_":
+        if mod.name[:5]==PREFIX:
             list.append((mod.name, mod.name, ""))
     if len(list)==0:
         return [("0", "", "Create a modifier first.")]

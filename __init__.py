@@ -78,6 +78,10 @@ if current_process().name != "__actor__":
 
         check_for_updates()
 
+        def get_dream_contexts(self, context):
+            return [("Project", "Project", ""), ("Displace", "Displace", "")]
+
+        bpy.types.Scene.dream_context = EnumProperty(name="Context", items=get_dream_contexts, description="Choose whether to do projection or displacement.")
         bpy.types.Scene.dream_textures_prompt = PointerProperty(type=DreamPrompt)
         bpy.types.Scene.hephaestus_props = PointerProperty(type=HephProps)
         bpy.types.Scene.dream_textures_prompt_file = PointerProperty(type=bpy.types.Text)
