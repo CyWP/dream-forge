@@ -4,7 +4,7 @@ from ..heph_utils.uv_layout import uv_to_img, auto_uv_map
 class CreateUvImg(bpy.types.Operator):
     bl_idname = "shade.dream_texture_displace_uv_img"
     bl_label = "Create UV image"
-    bl_description = "Create Editable UV image for image geenration control."
+    bl_description = "Create Editable UV image for image generation control."
     bl_options = {'REGISTER'}
 
     @classmethod

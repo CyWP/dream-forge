@@ -139,7 +139,7 @@ class DisplaceDreamtexture(bpy.types.Operator):
             if not ctrl_img:
                 ctrl_img = bpy.data.images.load(heph_props.external_image)
         elif heph_props.control_image == ctrl_img_options[2][0]:
-            ctrl_img = bpy.data.images.get(heph_props.internal_image)
+            ctrl_img = heph_props.internal_image
         elif heph_props.control_image == ctrl_img_options[3][0]:
             ctrl_img = bpy.data.textures[heph_props.texture_image].image
         else:

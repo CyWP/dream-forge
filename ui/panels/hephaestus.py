@@ -15,6 +15,7 @@ from ...operators.view_history import ImportPromptFile
 from ...operators.smooth_vertex_group import SmoothVertexGroup
 from ...operators.viewer_to_disp import ApplyViewerNode
 from ...operators.create_uv_img import CreateUvImg
+from ...operators.shader_to_disp import ApplyMaterial
 from ..space_types import SPACE_TYPES
 from ...property_groups.dream_prompt import DreamPrompt, backend_options
 from ...generator_process.actions.prompt_to_image import Optimizations
@@ -79,7 +80,7 @@ def edit_panel(sub_panel, space_type, get_prompt):
 
         @classmethod
         def poll(cls, context):
-            return displace_context(context) and any(mod.name[:5]==PREFIX for mod in context.object.modifiers)
+            return displace_context(context) and any(mod.name[:len(PREFIX)]==PREFIX for mod in context.object.modifiers)
 
         def draw_header_preset(self, context):
             props = get_prompt(context)
@@ -100,6 +101,8 @@ def edit_panel(sub_panel, space_type, get_prompt):
                 row.operator(SmoothVertexGroup.bl_idname, text="Update Smoothing", icon="SMOOTHCURVE")
                 row = layout.row()
                 row.operator(ApplyViewerNode.bl_idname, text="Apply Viewer Node", icon="FORCE_TEXTURE")
+                row = layout.row()
+                row.operator(ApplyMaterial.bl_idname, text="Bake and Apply Material", icon="MATERIAL")
                 
     return EditPanel
 

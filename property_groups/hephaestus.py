@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import FloatProperty, EnumProperty, BoolProperty, StringProperty, IntProperty
+from bpy.props import FloatProperty, EnumProperty, BoolProperty, StringProperty, IntProperty, PointerProperty
 from copy import copy
 
 from ..heph_utils.constants import PREFIX
@@ -17,7 +17,7 @@ def get_active_modifiers(self, context):
     obj = context.object
     list = []
     for mod in obj.modifiers:
-        if mod.name[:5]==PREFIX:
+        if mod.name[:len(PREFIX)]==PREFIX:
             list.append((mod.name, mod.name, ""))
     if len(list)==0:
         return [("0", "", "Create a modifier first.")]
@@ -63,7 +63,7 @@ def update_active_modifier(self, context):
     heph_props = context.scene.hephaestus_props
     mod = context.object.modifiers[heph_props.active_modifier]
     heph_props.edit_disp_strength = mod.strength
-    heph_props.edit_midlevel = mod.midlevel
+    heph_props.edit_midlevel = mod.mid_level
 
 def update_disp_strength(self, context):
     heph_props = context.scene.hephaestus_props
@@ -120,8 +120,9 @@ attributes = {
     "control_image": EnumProperty(name="Source",
                                  items=ctrl_img_options,
                                  description="Provenance of image for texture generation control."),
-    "internal_image":EnumProperty(name="Image",
-                                  items=get_internal_images),
+    "internal_image": PointerProperty(name="Image",
+                                        type=bpy.types.Image,
+                                        description="Select an image"),
     "external_image": StringProperty(name="Image",
                                      default="path/to/image",
                                      subtype='FILE_PATH'),

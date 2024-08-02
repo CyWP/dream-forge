@@ -7,6 +7,7 @@ from .operators.upscale import Upscale
 from .operators.project import ProjectDreamTexture, dream_texture_projection_panels
 from .operators.displace import DisplaceDreamtexture
 from .operators.viewer_to_disp import ApplyViewerNode
+from .operators.shader_to_disp import ApplyMaterial
 from .operators.create_uv_img import CreateUvImg
 from .operators.smooth_vertex_group import SmoothVertexGroup
 from .operators.notify_result import NotifyResult
@@ -41,6 +42,7 @@ CLASSES = (
     ProjectDreamTexture,
     DisplaceDreamtexture,
     ApplyViewerNode,
+    ApplyMaterial,
     SmoothVertexGroup,
     CreateUvImg,
     
