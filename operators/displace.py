@@ -4,7 +4,6 @@ from typing import List
 
 from .dream_texture import CancelGenerator, ReleaseGenerator
 from .notify_result import NotifyResult
-
 from ..generator_process import Generator
 
 from ..heph_utils.smooth_vertex_group import auto_smooth
@@ -13,11 +12,10 @@ from ..heph_utils.uv_layout import auto_uv_map, uv_to_img
 from ..ui.panels.hephaestus import displace_context
 
 from ..property_groups.hephaestus import unwrap_options, ctrl_img_options
-
 from .. import api
 
 def _validate_displacement(context):
-    return True
+    return context.object.type == 'MESH', context.object.mode=='OBJECT'
 
 def displace_panel(sub_panel, space_type, get_prompt):
 

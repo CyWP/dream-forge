@@ -1,27 +1,9 @@
-from bpy.types import Panel
-from bpy_extras.io_utils import ImportHelper
-
-import webbrowser
-import os
-import shutil
-
-from ...absolute_path import CLIPSEG_WEIGHTS_PATH
-from ..presets import DREAM_PT_AdvancedPresets
 from ...pil_to_image import *
 from ...prompt_engineering import *
-from ...operators.dream_texture import DreamTexture, ReleaseGenerator, CancelGenerator, get_source_image
-from ...operators.open_latest_version import OpenLatestVersion, is_force_show_download, new_version_available
-from ...operators.view_history import ImportPromptFile
 from ...operators.smooth_vertex_group import SmoothVertexGroup
 from ...operators.viewer_to_disp import ApplyViewerNode
 from ...operators.create_uv_img import CreateUvImg
 from ...operators.shader_to_disp import ApplyMaterial
-from ..space_types import SPACE_TYPES
-from ...property_groups.dream_prompt import DreamPrompt, backend_options
-from ...generator_process.actions.prompt_to_image import Optimizations
-from ...generator_process.actions.detect_seamless import SeamlessAxes
-from ...api.models import FixItError
-from ... import api
 from ...heph_utils.constants import PREFIX
 
 def displace_context(context) -> bool:
@@ -80,7 +62,7 @@ def edit_panel(sub_panel, space_type, get_prompt):
 
         @classmethod
         def poll(cls, context):
-            return displace_context(context) and any(mod.name[:len(PREFIX)]==PREFIX for mod in context.object.modifiers)
+            return displace_context(context) and any(mod.name[:len(PREFIX)]==PREFIX for mod in context.object.modifiers) and context.active_object.type=="MESH"
 
         def draw_header_preset(self, context):
             props = get_prompt(context)
@@ -101,8 +83,12 @@ def edit_panel(sub_panel, space_type, get_prompt):
                 row.operator(SmoothVertexGroup.bl_idname, text="Update Smoothing", icon="SMOOTHCURVE")
                 row = layout.row()
                 row.operator(ApplyViewerNode.bl_idname, text="Apply Viewer Node", icon="FORCE_TEXTURE")
-                row = layout.row()
-                row.operator(ApplyMaterial.bl_idname, text="Bake and Apply Material", icon="MATERIAL")
+                box = layout.box()
+                row = box.row()
+                row.prop(props, 'bake_img_width')
+                row.prop(props, 'bake_img_height')
+                row=box.row()
+                row.operator(ApplyMaterial.bl_idname, text=ApplyMaterial.button_text, icon="MATERIAL")
                 
     return EditPanel
 

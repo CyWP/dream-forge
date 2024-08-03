@@ -127,11 +127,14 @@ attributes = {
                                      default="path/to/image",
                                      subtype='FILE_PATH'),
     "texture_image": EnumProperty(name="Image",
-                                  items=get_textures)
+                                  items=get_textures),
+    #Baking
+    "bake_img_width": IntProperty(name="Width", description="Width of baked image", default=512, min=32),
+    "bake_img_height": IntProperty(name="Height", description="Height of baked image", default=512, min=32)
 }
 
 HephProps = type('HephProps', (bpy.types.PropertyGroup,), {
-    "bl_label": "HephProps",
+    "bl_label": "Displacement Properties",
     "bl_idname": "dream_textures.Hephprops",
     "__annotations__": attributes,
 })

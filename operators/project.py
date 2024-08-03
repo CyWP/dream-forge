@@ -7,6 +7,7 @@ from bpy_extras import view3d_utils
 import mathutils
 import numpy as np
 from typing import List
+import tempfile
 
 from .view_history import ImportPromptFile
 from .open_latest_version import OpenLatestVersion, is_force_show_download, new_version_available
@@ -20,7 +21,6 @@ from .notify_result import NotifyResult
 from ..generator_process import Generator
 from ..generator_process.models import ModelType
 from ..api.models import FixItError
-import tempfile
 
 from ..engine.annotations.depth import render_depth_map
 
