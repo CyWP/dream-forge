@@ -12,11 +12,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name": "Dream Textures",
-    "author": "Dream Textures contributors",
-    "description": "Use Stable Diffusion to generate unique textures straight from the shader editor.",
+    "name": "Dream Forge",
+    "author": "Dream Textures contributors, Dream Forge contributors (forked from Dream Textures)",
+    "description": "Use Stable Diffusion to generate unique textures straight from the shader editor, or to generate unique displacement patterns while modeling.",
     "blender": (3, 1, 0),
-    "version": (0, 3, 1),
+    "version": (0, 1, 0),
     "location": "Image Editor -> Sidebar -> Dream",
     "category": "Paint"
 }
