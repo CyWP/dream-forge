@@ -143,7 +143,7 @@ class DisplaceDreamtexture(bpy.types.Operator):
         else:
             ctrl_img = bpy.data.images.get(f"{tex.name}_ctrl")
             if not ctrl_img:
-                ctrl_img = bpy.data.images.new(name=f"{tex.name}_ctrl")
+                ctrl_img = bpy.data.images.new(name=f"{tex.name}_ctrl", width=32, height=32)
 
         def step_callback(progress: List[api.GenerationResult]) -> bool:
             nonlocal tex_img
