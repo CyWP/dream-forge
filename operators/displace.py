@@ -143,7 +143,7 @@ class DisplaceDreamtexture(bpy.types.Operator):
         else:
             ctrl_img = bpy.data.images.get(f"{tex.name}_ctrl")
             if not ctrl_img:
-                ctrl_img = bpy.data.images.new(name=f"{tex.name}_ctrl")
+                ctrl_img = bpy.data.images.new(name=f"{tex.name}_ctrl", width=32, height=32)
 
         def step_callback(progress: List[api.GenerationResult]) -> bool:
             nonlocal tex_img
@@ -154,8 +154,16 @@ class DisplaceDreamtexture(bpy.types.Operator):
                 tex_img = bpy.data.images.new(name=tex.name, width=image.shape[1], height=image.shape[0])
             tex_img.name = f"Step {progress[-1].progress}/{progress[-1].total}"
             tex_img.pixels[:] = image.ravel()
-            tex_img.update()
-            tex.image = tex_img
+            try:
+                copied_image = bpy.data.images.new(
+                name=f"{mod.name}Step{progress[-1].progress}/{progress[-1].total}",
+                width=tex_img.size[0],
+                height=tex_img.size[1]
+                )
+                copied_image.pixels = image.ravel()
+                copied_image.pack()
+            except Exception as e:
+                print(str(e))
             mod.show_viewport = True
             mod.show_render = True
             return CancelGenerator.should_continue
