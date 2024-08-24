@@ -11,7 +11,7 @@ from .operators.shader_to_disp import ApplyMaterial
 from .operators.create_uv_img import CreateUvImg
 from .operators.smooth_vertex_group import SmoothVertexGroup
 from .operators.notify_result import NotifyResult
-from .property_groups.control_net import ControlNet, SCENE_UL_ControlNetList, ControlNetsAdd, ControlNetsRemove
+from .property_groups.control_net import ControlNet, ControlNetsAdd, ControlNetsRemove, ControlNetsAddMenu, BakeControlNetImage
 from .property_groups.dream_prompt import DreamPrompt
 from .property_groups.hephaestus import HephProps
 from .property_groups.seamless_result import SeamlessResult
@@ -46,9 +46,10 @@ CLASSES = (
     SmoothVertexGroup,
     CreateUvImg,
     
-    SCENE_UL_ControlNetList,
+    ControlNetsAddMenu,
     ControlNetsAdd,
     ControlNetsRemove,
+    BakeControlNetImage,
 
     DREAM_PT_AdvancedPresets,
     DREAM_MT_AdvancedPresets,

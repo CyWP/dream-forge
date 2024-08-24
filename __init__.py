@@ -16,7 +16,7 @@ bl_info = {
     "author": "Dream Textures contributors, Dream Forge contributors (forked from Dream Textures)",
     "description": "Use Stable Diffusion to generate unique textures straight from the shader editor, or to generate unique displacement patterns while modeling.",
     "blender": (3, 1, 0),
-    "version": (0, 1, 0),
+    "version": (0, 4, 1),
     "location": "Image Editor -> Sidebar -> Dream",
     "category": "Paint"
 }
