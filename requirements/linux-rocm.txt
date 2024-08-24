@@ -1,11 +1,12 @@
-git+https://github.com/huggingface/diffusers.git@d1222064669a758c476014fb7a09e24a0c907222
+diffusers==0.27.2
 invisible-watermark
 transformers
 accelerate
 huggingface_hub
+controlnet-aux==0.0.7
 
---extra-index-url https://download.pytorch.org/whl/rocm5.6/
-torch>=2.1
+--extra-index-url https://download.pytorch.org/whl/rocm6.1/
+torch>=2.3.1
 
 # Original SD checkpoint conversion
 pytorch-lightning
@@ -14,6 +15,5 @@ omegaconf
 
 scipy # LMSDiscreteScheduler
 
-stability-sdk # DreamStudio
-
-opencolorio==2.1.2 # color management
+opencolorio==2.3.2 # color management
+matplotlib

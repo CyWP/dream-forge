@@ -12,11 +12,11 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name": "Dream Textures",
-    "author": "Dream Textures contributors",
-    "description": "Use Stable Diffusion to generate unique textures straight from the shader editor.",
+    "name": "Dream Forge",
+    "author": "Dream Textures contributors, Dream Forge contributors (forked from Dream Textures)",
+    "description": "Use Stable Diffusion to generate unique textures straight from the shader editor, or to generate unique displacement patterns while modeling.",
     "blender": (3, 1, 0),
-    "version": (0, 3, 1),
+    "version": (0, 4, 1),
     "location": "Image Editor -> Sidebar -> Dream",
     "category": "Paint"
 }
@@ -78,6 +78,10 @@ if current_process().name != "__actor__":
 
         check_for_updates()
 
+        def get_dream_contexts(self, context):
+            return [("Project", "Project", ""), ("Displace", "Displace", "")]
+
+        bpy.types.Scene.dream_context = EnumProperty(name="Context", items=get_dream_contexts, description="Choose whether to do projection or displacement.")
         bpy.types.Scene.dream_textures_prompt = PointerProperty(type=DreamPrompt)
         bpy.types.Scene.hephaestus_props = PointerProperty(type=HephProps)
         bpy.types.Scene.dream_textures_prompt_file = PointerProperty(type=bpy.types.Text)
@@ -121,7 +125,10 @@ if current_process().name != "__actor__":
         engine.register()
 
         for cls in CLASSES:
-            bpy.utils.register_class(cls)
+            try:
+                bpy.utils.register_class(cls)
+            except Exception as e:
+                raise Exception(f"{str(e)}\n Class:{cls.__name__}")
 
         for tool in TOOLS:
             bpy.utils.register_tool(tool)

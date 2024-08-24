@@ -7,22 +7,25 @@ from bpy_extras import view3d_utils
 import mathutils
 import numpy as np
 from typing import List
+import tempfile
 
 from .view_history import ImportPromptFile
 from .open_latest_version import OpenLatestVersion, is_force_show_download, new_version_available
 
 from ..ui.panels.dream_texture import advanced_panel, create_panel, prompt_panel, size_panel
+from ..ui.panels.hephaestus import mesh_panel, control_panel, edit_panel, displace_context
+from ..operators.displace import displace_panel
 from .dream_texture import CancelGenerator, ReleaseGenerator
 from .notify_result import NotifyResult
 
 from ..generator_process import Generator
 from ..generator_process.models import ModelType
 from ..api.models import FixItError
-import tempfile
 
 from ..engine.annotations.depth import render_depth_map
 
 from .. import api
+from .. import image_utils
 
 framebuffer_arguments = [
     ('depth', 'Depth', 'Only provide the scene depth as input'),
@@ -71,7 +74,7 @@ Select at least one face to project onto.""",
 def dream_texture_projection_panels():
     class DREAM_PT_dream_panel_projection(bpy.types.Panel):
         """Creates a Dream Textures panel for projection"""
-        bl_label = "Dream Texture Projection"
+        bl_label = "Dream Texture"
         bl_idname = f"DREAM_PT_dream_panel_projection"
         bl_category = "Dream"
         bl_space_type = 'VIEW_3D'
@@ -79,6 +82,7 @@ def dream_texture_projection_panels():
 
         @classmethod
         def poll(cls, context):
+            
             if cls.bl_space_type == 'NODE_EDITOR':
                 return context.area.ui_type == "ShaderNodeTree" or context.area.ui_type == "CompositorNodeTree"
             else:
@@ -86,6 +90,7 @@ def dream_texture_projection_panels():
         
         def draw_header_preset(self, context):
             layout = self.layout
+            layout.prop(context.scene, "dream_context", expand=True)
             layout.operator(ImportPromptFile.bl_idname, text="", icon="IMPORT")
             layout.separator()
 
@@ -106,15 +111,24 @@ def dream_texture_projection_panels():
 
     def get_prompt(context):
         return context.scene.dream_textures_project_prompt
+    def get_heph_props(context):
+        return context.scene.hephaestus_props
+    
     yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_projection.bl_idname, prompt_panel, get_prompt)
     yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_projection.bl_idname, size_panel, get_prompt)
     yield from create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_projection.bl_idname, advanced_panel, get_prompt)
+    yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_projection.bl_idname, mesh_panel, get_heph_props)
+    yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_projection.bl_idname, control_panel, get_heph_props)
     def actions_panel(sub_panel, space_type, get_prompt):
         class ActionsPanel(sub_panel):
             """Create a subpanel for actions"""
             bl_idname = f"DREAM_PT_dream_panel_projection_actions"
             bl_label = "Actions"
             bl_options = {'HIDE_HEADER'}
+
+            @classmethod
+            def poll(cls, context):
+                return not displace_context(context)
 
             def draw(self, context):
                 super().draw(context)
@@ -176,7 +190,10 @@ def dream_texture_projection_panels():
                 except Exception as e:
                     print(e)
         return ActionsPanel
+    
     yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_projection.bl_idname, actions_panel, get_prompt)
+    yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_projection.bl_idname, displace_panel, get_heph_props)
+    yield create_panel('VIEW_3D', 'UI', DREAM_PT_dream_panel_projection.bl_idname, edit_panel, get_heph_props)
 
 def bake(context, mesh, src, dest, src_uv, dest_uv):
     def bake_shader():
@@ -357,7 +374,7 @@ class ProjectDreamTexture(bpy.types.Operator):
 
         context.scene.dream_textures_info = "Rendering viewport depth..."
 
-        depth = render_depth_map(
+        depth = np.flipud(render_depth_map(
             context.evaluated_depsgraph_get(),
             collection=None,
             width=region_width,
@@ -365,7 +382,7 @@ class ProjectDreamTexture(bpy.types.Operator):
             matrix=context.space_data.region_3d.view_matrix,
             projection_matrix=context.space_data.region_3d.window_matrix,
             main_thread=True
-        )
+        ))
         
         texture = None
 
@@ -373,11 +390,7 @@ class ProjectDreamTexture(bpy.types.Operator):
             nonlocal texture
             context.scene.dream_textures_progress = progress[-1].progress
             image = api.GenerationResult.tile_images(progress)
-            if texture is None:
-                texture = bpy.data.images.new(name="Step", width=image.shape[1], height=image.shape[0])
-            texture.name = f"Step {progress[-1].progress}/{progress[-1].total}"
-            texture.pixels[:] = image.ravel()
-            texture.update()
+            texture = image_utils.np_to_bpy(image, f"Step {progress[-1].progress}/{progress[-1].total}", texture)
             image_texture_node.image = texture
             return CancelGenerator.should_continue
 
@@ -399,13 +412,7 @@ class ProjectDreamTexture(bpy.types.Operator):
                 trim_aware_name = (prompt_subject[:54 - seed_str_length] + '..') if len(prompt_subject) > 54 else prompt_subject
                 name_with_trimmed_prompt = f"{trim_aware_name} ({result.seed})"
 
-                if texture is None:
-                    texture = bpy.data.images.new(name=name_with_trimmed_prompt, width=result.image.shape[1], height=result.image.shape[0])
-                texture.name = name_with_trimmed_prompt
-                material.name = name_with_trimmed_prompt
-                texture.pixels[:] = result.image.ravel()
-                texture.update()
-                texture.pack()
+                texture = image_utils.np_to_bpy(result.image, name_with_trimmed_prompt, texture)
                 image_texture_node.image = texture
                 if context.scene.dream_textures_project_bake:
                     for bm, src_uv_layer in target_objects:
@@ -431,7 +438,7 @@ class ProjectDreamTexture(bpy.types.Operator):
         image = np.asarray(image_data.pixels).reshape((*depth.shape, image_data.channels)) if image_data is not None else None
 
         if context.scene.dream_textures_project_use_control_net:
-            generated_args: api.GenerationArguments = context.scene.dream_textures_project_prompt.generate_args(context, init_image=image, control_images=[np.flipud(depth)])
+            generated_args: api.GenerationArguments = context.scene.dream_textures_project_prompt.generate_args(context, init_image=image, control_images=[image_utils.rgba(depth)])
             backend.generate(generated_args, step_callback=step_callback, callback=callback)
         else:
             generated_args: api.GenerationArguments = context.scene.dream_textures_project_prompt.generate_args(context)

@@ -32,28 +32,27 @@ def hf_list_models(
     query: str,
     token: str,
 ) -> list[Model]:
-    from huggingface_hub import HfApi, ModelFilter
+    from huggingface_hub import HfApi
     
     if hasattr(self, "huggingface_hub_api"):
         api: HfApi = self.huggingface_hub_api
     else:
         api = HfApi()
         setattr(self, "huggingface_hub_api", api)
-    
-    filter = ModelFilter(tags="diffusers")
+
     models = api.list_models(
-        filter=filter,
+        tags="diffusers",
         search=query,
-        use_auth_token=token
+        token=token,
     )
     return [
-        Model(m.modelId, m.author or "", m.tags, m.likes if hasattr(m, "likes") else 0, getattr(m, "downloads", -1), ModelType.UNKNOWN)
+        Model(m.id, m.author or "", m.tags, m.likes if hasattr(m, "likes") else 0, getattr(m, "downloads", -1), ModelType.UNKNOWN)
         for m in models
-        if m.modelId is not None and m.tags is not None and 'diffusers' in (m.tags or {})
+        if m.id is not None and m.tags is not None and 'diffusers' in (m.tags or {})
     ]
 
 def hf_list_installed_models(self) -> list[Model]:
-    from diffusers.utils import DIFFUSERS_CACHE
+    from huggingface_hub.constants import HF_HUB_CACHE
     from diffusers.utils.hub_utils import old_diffusers_cache
 
     def list_dir(cache_dir):
@@ -110,7 +109,7 @@ def hf_list_installed_models(self) -> list[Model]:
             )
             if model is not None
         ]
-    new_cache_list = list_dir(DIFFUSERS_CACHE)
+    new_cache_list = list_dir(HF_HUB_CACHE)
     model_ids = [os.path.basename(m.id) for m in new_cache_list]
     for model in list_dir(old_diffusers_cache):
         if os.path.basename(model.id) not in model_ids:
@@ -163,6 +162,7 @@ def hf_snapshot_download(
 ):
     from huggingface_hub import snapshot_download, repo_info
     from diffusers import StableDiffusionPipeline
+    from diffusers.pipelines.pipeline_utils import variant_compatible_siblings
 
     future = Future()
     yield future
@@ -172,10 +172,12 @@ def hf_snapshot_download(
     files = [file.rfilename for file in info.siblings]
 
     if "model_index.json" in files:
+        # check if the variant files are available before trying to download them
+        _, variant_files = variant_compatible_siblings(files, variant=variant)
         StableDiffusionPipeline.download(
             model,
-            use_auth_token=token,
-            variant=variant,
+            token=token,
+            variant=variant if len(variant_files) > 0 else None,
             resume_download=resume_download,
         )
     elif "config.json" in files:

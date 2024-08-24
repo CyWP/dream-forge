@@ -10,6 +10,9 @@ from ..engine import node_executor
 from .annotations import depth
 from ..property_groups.dream_prompt import backend_options
 from .nodes.pipeline_nodes import NodeStableDiffusion
+from .nodes.input_nodes import NodeRenderProperties
+from ..generator_process import actor
+from .. import image_utils
 
 class DreamTexturesRenderEngine(bpy.types.RenderEngine):
     """A custom Dream Textures render engine, that uses Stable Diffusion and scene data to render images, instead of as a pass on top of Cycles."""
@@ -27,19 +30,6 @@ class DreamTexturesRenderEngine(bpy.types.RenderEngine):
 
     def render(self, depsgraph):
         scene = depsgraph.scene
-
-        def prepare_result(result):
-            if len(result.shape) == 2:
-                return np.concatenate(
-                    (
-                        np.stack((result,)*3, axis=-1),
-                        np.ones((*result.shape, 1))
-                    ),
-                    axis=-1
-                )
-            else:
-                return result
-        
         result = self.begin_result(0, 0, scene.render.resolution_x, scene.render.resolution_y)
         layer = result.layers[0].passes["Combined"]
         self.update_result(result)
@@ -51,8 +41,7 @@ class DreamTexturesRenderEngine(bpy.types.RenderEngine):
             def node_update(response):
                 if isinstance(response, np.ndarray):
                     try:
-                        node_result = prepare_result(response)
-                        layer.rect = node_result.reshape(-1, node_result.shape[-1])
+                        image_utils.np_to_render_pass(response, layer, top_to_bottom=False)
                         self.update_result(result)
                     except:
                         pass
@@ -65,16 +54,15 @@ class DreamTexturesRenderEngine(bpy.types.RenderEngine):
             for k, v in group_outputs:
                 if type(v) == int or type(v) == str or type(v) == float:
                     self.get_result().stamp_data_add_field(k, str(v))
-            node_result = prepare_result(node_result)
         except Exception as error:
             self.report({'ERROR'}, str(error))
             raise error
 
-        layer.rect = node_result.reshape(-1, node_result.shape[-1])
+        image_utils.np_to_render_pass(node_result, layer, top_to_bottom=False)
 
         if "Depth" in result.layers[0].passes:
             z = depth.render_depth_map(depsgraph, invert=True)
-            result.layers[0].passes["Depth"].rect = z.reshape((scene.render.resolution_x * scene.render.resolution_y, 1))
+            image_utils.np_to_render_pass(z, result.layers[0].passes["Depth"], top_to_bottom=False)
         
         self.end_result(result)
     
@@ -87,7 +75,31 @@ class NewEngineNodeTree(bpy.types.Operator):
     bl_label = "New Node Tree"
 
     def execute(self, context):
-        bpy.ops.node.new_node_tree(type="DreamTexturesNodeTree")
+        # TODO: Get the name of the default node tree from a config file
+        # TODO: type is deprecated https://docs.blender.org/api/current/bpy.types.NodeTree.html 
+        #       When testing the type of the resulting node tree using  bpy.data.node_groups['Dream Textures Node Tree'].type it is '' because of that
+        bpy.ops.node.new_node_tree(type=DreamTexturesNodeTree.bl_idname, name="Dream Textures Node Editor")
+        # Get the newly generated node tree
+        node_tree = bpy.data.node_groups[-1]
+        node_sd = node_tree.nodes.new(type=NodeStableDiffusion.bl_idname)
+        node_sd.location = (200, 200)
+        node_out = node_tree.nodes.new(type="NodeGroupOutput")
+        # Blender 4.0 uses a new API for in- and outputs
+        if bpy.app.version[0] > 3:
+            node_tree.interface.new_socket('Image', description="Output of the final image.", in_out='OUTPUT', socket_type='NodeSocketColor')
+        else:
+            node_tree.outputs.new('NodeSocketColor','Image')
+        node_out.location = (400, 200)
+        node_tree.links.new(node_sd.outputs['Image'], node_out.inputs['Image'])
+        node_props = node_tree.nodes.new(type=NodeRenderProperties.bl_idname)
+        node_props.location = (0,200)
+        node_tree.links.new(node_props.outputs['Resolution X'], node_sd.inputs['Width'])
+        node_tree.links.new(node_props.outputs['Resolution Y'], node_sd.inputs['Height'])
+        # in case the node editor is open, synchronize the open node trees:
+        for area in context.screen.areas:
+            if area.type == 'NODE_EDITOR':
+                if area.spaces.active.tree_type == DreamTexturesNodeTree.bl_idname:
+                    area.spaces.active.node_tree = node_tree
         return {'FINISHED'}
 
 def draw_device(self, context):
@@ -112,7 +124,11 @@ def _update_engine_backend(self, context):
 
 class DreamTexturesRenderEngineProperties(bpy.types.PropertyGroup):
     node_tree: bpy.props.PointerProperty(type=DreamTexturesNodeTree, name="Node Tree", poll=_poll_node_tree)
+<<<<<<< HEAD
     backend: bpy.props.EnumProperty(name="Backend", items=backend_options, default=1, description="The backend to use for all pipeline nodes", update=_update_engine_backend)
+=======
+    backend: bpy.props.EnumProperty(name="Backend", items=backend_options, default=0, description="The backend to use for all pipeline nodes", update=_update_engine_backend)
+>>>>>>> 41e32ea42cd9619eb368069351782cbe49084258
 
 def engine_panels():
     bpy.types.RENDER_PT_output.COMPAT_ENGINES.add(DreamTexturesRenderEngine.bl_idname)

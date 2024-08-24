@@ -1,22 +1,15 @@
+import bpy
 from bpy.types import Panel
-from bpy_extras.io_utils import ImportHelper
-
-import webbrowser
-import os
-import shutil
-
-from ...absolute_path import CLIPSEG_WEIGHTS_PATH
 from ..presets import DREAM_PT_AdvancedPresets
-from ...pil_to_image import *
 from ...prompt_engineering import *
 from ...operators.dream_texture import DreamTexture, ReleaseGenerator, CancelGenerator, get_source_image
 from ...operators.open_latest_version import OpenLatestVersion, is_force_show_download, new_version_available
 from ...operators.view_history import ImportPromptFile
 from ..space_types import SPACE_TYPES
-from ...property_groups.dream_prompt import DreamPrompt, backend_options
-from ...generator_process.actions.prompt_to_image import Optimizations
 from ...generator_process.actions.detect_seamless import SeamlessAxes
 from ...api.models import FixItError
+from ...property_groups.dream_prompt import DreamPrompt
+from ...property_groups.control_net import BakeControlNetImage
 from ... import api
 
 def dream_texture_panels():
@@ -38,6 +31,8 @@ def dream_texture_panels():
             
             def draw_header_preset(self, context):
                 layout = self.layout
+                if space_type == 'VIEW_3D':
+                    layout.prop(context.scene, "dream_context", expand=True)
                 layout.operator(ImportPromptFile.bl_idname, text="", icon="IMPORT")
                 layout.separator()
 
@@ -76,7 +71,7 @@ def dream_texture_panels():
         yield create_panel(space_type, 'UI', DreamTexturePanel.bl_idname, actions_panel, get_prompt)
 
 def create_panel(space_type, region_type, parent_id, ctor, get_prompt, use_property_decorate=False, **kwargs):
-    class BasePanel(bpy.types.Panel):
+    class BasePanel(Panel):
         bl_category = "Dream"
         bl_space_type = space_type
         bl_region_type = region_type
@@ -241,11 +236,26 @@ def control_net_panel(sub_panel, space_type, get_prompt):
             layout = self.layout
             prompt = get_prompt(context)
             
-            row = layout.row()
-            row.template_list("SCENE_UL_ControlNetList", "", prompt, "control_nets", prompt, "active_control_net")
-            col = row.column(align=True)
-            col.operator("dream_textures.control_nets_add", icon='ADD', text="")
-            col.operator("dream_textures.control_nets_remove", icon='REMOVE', text="")
+            layout.operator("wm.call_menu", text="Add ControlNet", icon='ADD').name = "DREAM_MT_control_nets_add"
+            for i, control_net in enumerate(prompt.control_nets):
+                box = layout.box()
+                box.use_property_split = False
+                box.use_property_decorate = False
+                
+                row = box.row()
+                row.prop(control_net, "enabled", icon="MODIFIER_ON" if control_net.enabled else "MODIFIER_OFF", icon_only=True, emboss=False)
+                row.prop(control_net, "control_net", text="")
+                row.operator("dream_textures.control_nets_remove", icon='X', emboss=False, text="").index = i
+
+                col = box.column()
+                col.use_property_split = True
+                col.template_ID(control_net, "control_image", open="image.open", text="Image")
+                processor_row = col.row()
+                processor_row.prop(control_net, "processor_id")
+                if control_net.processor_id != "none":
+                    processor_row.operator(BakeControlNetImage.bl_idname, icon='RENDER_STILL', text='').index = i
+                col.prop(control_net, "conditioning_scale")
+                
     return ControlNetPanel
 
 def advanced_panel(sub_panel, space_type, get_prompt):
@@ -343,10 +353,15 @@ def actions_panel(sub_panel, space_type, get_prompt):
                 else:
                     row.operator(DreamTexture.bl_idname, icon="PLAY", text="Generate")
             else:
-                disabled_row = row.row(align=True)
-                disabled_row.use_property_split = True
-                disabled_row.prop(context.scene, 'dream_textures_progress', slider=True)
-                disabled_row.enabled = False
+                if bpy.app.version[0] >= 4:
+                    progress = context.scene.dream_textures_progress
+                    progress_max = bpy.types.Scene.dream_textures_progress.keywords['max']
+                    row.progress(text=f"{progress} / {progress_max}", factor=progress / progress_max)
+                else:
+                    disabled_row = row.row(align=True)
+                    disabled_row.use_property_split = True
+                    disabled_row.prop(context.scene, 'dream_textures_progress', slider=True)
+                    disabled_row.enabled = False
             row.operator(ReleaseGenerator.bl_idname, icon="X", text="")
 
             if context.scene.dream_textures_last_execution_time != "":
