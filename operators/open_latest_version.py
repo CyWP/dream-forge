@@ -3,8 +3,8 @@ import bpy
 import webbrowser
 from ..version import VERSION, version_tag, version_tuple
 
-REPO_OWNER = "carson-katri"
-REPO_NAME = "dream-textures"
+REPO_OWNER = "CyWP"
+REPO_NAME = "dream-forge"
 
 latest_version = VERSION
 def check_for_updates():
@@ -37,6 +37,6 @@ class OpenLatestVersion(bpy.types.Operator):
         return True
 
     def execute(self, context):
-        webbrowser.open(f'https://github.com/carson-katri/dream-textures/releases/tag/{version_tag(latest_version)}')
+        webbrowser.open(f'https://github.com/carson-katri/dream-forge/releases/tag/{version_tag(latest_version)}')
 
         return {"FINISHED"}
