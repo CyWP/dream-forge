@@ -2,7 +2,7 @@ name: Package Release
 on:
   push:
     branches:
-      - "releases/**"
+      - "release/**"
   workflow_dispatch:
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          path: dream_textures
+          path: dream_forge
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -47,10 +47,10 @@ jobs:
         uses: thedoctor0/zip-release@main
         with:
           type: zip
-          filename: dream_textures-${{ matrix.platform.filename }}${{ matrix.version.filename_suffix }}.zip
+          filename: dream_forge-${{ matrix.platform.filename }}${{ matrix.version.filename_suffix }}.zip
           exclusions: '*.git*'
       - name: Archive and upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: dream_textures-${{ matrix.platform.filename }}${{ matrix.version.filename_suffix }}
-          path: dream_textures-${{ matrix.platform.filename }}${{ matrix.version.filename_suffix }}.zip
+          name: dream_forge-${{ matrix.platform.filename }}${{ matrix.version.filename_suffix }}
+          path: dream_forge-${{ matrix.platform.filename }}${{ matrix.version.filename_suffix }}.zip

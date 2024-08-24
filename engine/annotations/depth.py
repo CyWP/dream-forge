@@ -29,7 +29,7 @@ def render_depth_map(context, collection=None, invert=True, width=None, height=N
                 gpu.matrix.load_matrix(matrix)
                 gpu.matrix.load_projection_matrix(projection_matrix)
                 
-                shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+                shader = gpu.shader.from_builtin('UNIFORM_COLOR')
 
                 def render_mesh(mesh, transform):
                     mesh.transform(transform)
