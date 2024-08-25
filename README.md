@@ -2,7 +2,6 @@
 
 [![Latest Release](https://flat.badgen.net/github/release/CyWP/dream-forge)](https://github.com/carson-katri/dream-textures/releases/latest)
 [![Total Downloads](https://img.shields.io/github/downloads/CyWP/dream-forge/total?style=flat-square)](https://github.com/carson-katri/dream-textures/releases/latest)
-[![Buy on Blender Market](https://flat.badgen.net/badge/buy/blender%20market/orange)](https://www.blendermarket.com/products/dream-forge)
 
 Extension of [Dream Textures](https://github.com/carson-katri/dream-textures) focusing on displacement generation for 3d modeling.
 * Incorporate geometry-aware generative displacement in your 3d modeling pipeline.
@@ -27,11 +26,11 @@ If you want a visual guide to installation, see this video tutorial from Ashlee 
 
 ## Wiki
 
-### Dream Forge
+### [Dream Forge](https://github.com/CyWP/dream-forge/wiki)
 Functionalities specific to Dream Forge.
-[Interface]() | [Generating Displacement]() | [Guiding Generation]() | [Compositor]() | [Material Baking]()
+[Interface](https://github.com/CyWP/dream-forge/wiki/Interface) | [Generating Displacement](https://github.com/CyWP/dream-forge/wiki/Displacement) | [Guiding Generation](https://github.com/CyWP/dream-forge/wiki/Generation_Control) | [Compositor](https://github.com/CyWP/dream-forge/wiki/Compositor) | [Material Baking](https://github.com/CyWP/dream-forge/wiki/Baking)
 
-### Dream Textures
+### [Dream Textures](https://github.com/carson-katri/dream-textures/wiki)
 Functionalities that have to do with Dream Textures.
 [Image Generation](https://github.com/carson-katri/dream-textures/wiki/Image-Generation) | [Texture Projection](https://github.com/carson-katri/dream-textures/wiki/Texture-Projection) | [Inpaint/Outpaint](https://github.com/carson-katri/dream-textures/wiki/Inpaint-and-Outpaint) | [Render Engine](https://github.com/carson-katri/dream-textures/wiki/Render-Engine) | [AI Upscaling](https://github.com/carson-katri/dream-textures/wiki/AI-Upscaling) | [History](https://github.com/carson-katri/dream-textures/wiki/History)
 
@@ -56,4 +55,3 @@ If you are experiencing trouble getting Dream Forge running, check Blender's sys
 Features and feedback are also accepted on both issues pages. If you have any issues that aren't listed, feel free to add them there!
 
 The [Dream Textures Discord server](https://discord.gg/EmDJ8CaWZ7) also has a common issues list and strong community of helpful people, so feel free to come by for some help there as well.
-
