@@ -13,6 +13,7 @@ from ..ui.panels.hephaestus import displace_context
 
 from ..property_groups.hephaestus import unwrap_options, ctrl_img_options
 from .. import api
+from .. import image_utils
 
 def _validate_displacement(context):
     return context.object.type == 'MESH', context.object.mode=='OBJECT'
@@ -89,7 +90,6 @@ class DisplaceDreamtexture(bpy.types.Operator):
         obj = context.object
         heph_props = context.scene.hephaestus_props
         dream_props = context.scene.dream_textures_project_prompt
-        wm = bpy.context.window_manager
 
         # Setup the progress indicator
         def step_progress_update(self, context):
@@ -118,10 +118,12 @@ class DisplaceDreamtexture(bpy.types.Operator):
         mod.strength = heph_props.disp_strength
         mod.mid_level = heph_props.disp_midlevel
         mod.texture_coords = 'UV'
+        if 'All' not in obj.vertex_groups:
+            all = obj.vertex_groups.new(name=heph_props.vertex_group)
+            all.add(range(len(obj.data.vertices)), 1.0, 'REPLACE')
         if heph_props.auto_smoothing:
             context.scene.dream_textures_info = f"Smoothing Vertex Weights"
             mod.vertex_group = auto_smooth(context, vg_name=heph_props.vertex_group, num_iters=heph_props.smooth_amount)
-            #context.scene.dream_textures_info = f"Starting..."
         else:
             mod.vertex_group = heph_props.vertex_group
         mod.texture = tex
@@ -150,11 +152,7 @@ class DisplaceDreamtexture(bpy.types.Operator):
             context.scene.dream_textures_progress = progress[-1].progress
             context.scene.dream_textures_info = f"Step {progress[-1].progress}/{progress[-1].total}"
             image = api.GenerationResult.tile_images(progress)
-            if tex_img is None:
-                tex_img = bpy.data.images.new(name=tex.name, width=image.shape[1], height=image.shape[0])
-            tex_img.name = f"Step {progress[-1].progress}/{progress[-1].total}"
-            tex_img.pixels[:] = image.ravel()
-            tex_img.update()
+            tex_img = image_utils.np_to_bpy(image, f"Step {progress[-1].progress}/{progress[-1].total}", tex_img)
             tex.image = tex_img
             mod.show_viewport = True
             mod.show_render = True
@@ -173,14 +171,10 @@ class DisplaceDreamtexture(bpy.types.Operator):
                 context.scene.dream_textures_info = ""
                 context.scene.dream_textures_progress = 0
                 result = results[-1]
-                prompt_subject = context.scene.dream_textures_project_prompt.prompt_structure_token_subject
-                seed_str_length = len(str(result.seed))
-
-                if tex_img is None:
-                    tex_img = bpy.data.images.new(name=tex.name, width=result.image.shape[1], height=result.image.shape[0])
+                tex_img = image_utils.np_to_bpy(result.image, tex.name, tex_img)
+                tex.img = tex_img
                 tex_img.name = tex.name
 
-                tex_img.pixels[:] = result.image.ravel()
                 tex_img.update()
                 tex_img.pack()
 

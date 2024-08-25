@@ -124,11 +124,7 @@ def _update_engine_backend(self, context):
 
 class DreamTexturesRenderEngineProperties(bpy.types.PropertyGroup):
     node_tree: bpy.props.PointerProperty(type=DreamTexturesNodeTree, name="Node Tree", poll=_poll_node_tree)
-<<<<<<< HEAD
-    backend: bpy.props.EnumProperty(name="Backend", items=backend_options, default=1, description="The backend to use for all pipeline nodes", update=_update_engine_backend)
-=======
     backend: bpy.props.EnumProperty(name="Backend", items=backend_options, default=0, description="The backend to use for all pipeline nodes", update=_update_engine_backend)
->>>>>>> 41e32ea42cd9619eb368069351782cbe49084258
 
 def engine_panels():
     bpy.types.RENDER_PT_output.COMPAT_ENGINES.add(DreamTexturesRenderEngine.bl_idname)

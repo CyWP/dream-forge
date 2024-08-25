@@ -33,9 +33,6 @@ def _load_dependencies():
         python3_path = os.path.abspath(os.path.join(sys.executable, "..\\..\\..\\..\\python3.dll"))
         if os.path.exists(python3_path):
             os.add_dll_directory(os.path.dirname(python3_path))
-<<<<<<< HEAD
-if current_process().name == "__actor__":
-=======
 
         # fix for OSError: [WinError 126] The specified module could not be found. Error loading "...\dream_textures\.python_dependencies\torch\lib\shm.dll" or one of its dependencies.
         # Allows for shm.dll from torch==2.3.0 to access dependencies from mkl==2021.4.0
@@ -51,7 +48,6 @@ if current_process().name == "__actor__":
 main_thread_rendering = False
 is_actor_process = current_process().name == "__actor__"
 if is_actor_process:
->>>>>>> 41e32ea42cd9619eb368069351782cbe49084258
     _load_dependencies()
 
 class ActorContext(enum.IntEnum):

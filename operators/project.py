@@ -74,7 +74,7 @@ Select at least one face to project onto.""",
 def dream_texture_projection_panels():
     class DREAM_PT_dream_panel_projection(bpy.types.Panel):
         """Creates a Dream Textures panel for projection"""
-        bl_label = "Dream Texture"
+        bl_label = "Dream"
         bl_idname = f"DREAM_PT_dream_panel_projection"
         bl_category = "Dream"
         bl_space_type = 'VIEW_3D'

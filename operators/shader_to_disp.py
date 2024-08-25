@@ -9,7 +9,7 @@ class ApplyMaterial(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.active_object.type=="MESH" and any([slot.material is not None for slot in context.object.material_slots])
+        return context.active_object.type=="MESH" and any([slot.material is not None for slot in context.object.material_slots]) and context.active_object.select_get()
     
     def execute(self, context):
         obj = context.active_object

@@ -16,7 +16,7 @@ def dream_texture_panels():
     for space_type in SPACE_TYPES:
         class DreamTexturePanel(Panel):
             """Creates a Panel in the scene context of the properties editor"""
-            bl_label = "Dream Texture"
+            bl_label = "Dream" if space_type == 'VIEW_3D' else "Dream Textures"
             bl_idname = f"DREAM_PT_dream_panel_{space_type}"
             bl_category = "Dream"
             bl_space_type = space_type
