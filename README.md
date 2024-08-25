@@ -1,8 +1,5 @@
 ![Dream Forge](docs/assets/dream-forge_banner.gif)
 
-[![Latest Release](https://flat.badgen.net/github/release/CyWP/dream-forge)](https://github.com/carson-katri/dream-textures/releases/latest)
-[![Total Downloads](https://img.shields.io/github/downloads/CyWP/dream-forge/total?style=flat-square)](https://github.com/carson-katri/dream-textures/releases/latest)
-
 Extension of [Dream Textures](https://github.com/carson-katri/dream-textures) focusing on displacement generation for 3d modeling.
 * Incorporate geometry-aware generative displacement in your 3d modeling pipeline.
 * Easily create displacement designs that respond to a mesh's from.
