@@ -7,7 +7,7 @@ Extension of [Dream Textures](https://github.com/carson-katri/dream-textures) fo
 * Combine with shaders for full displacement control.
 ![Demo](docs/assets/dream_demo.gif)
 
-*This project would have never been possible without the work done by [Carson Katri](https://github.com/carson-katri) and the [Dream Textures](https://github.com/carson-katri/dream-textures) contributors.*
+*A huge thanks to [Carson Katri](https://github.com/carson-katri) and the [Dream Textures](https://github.com/carson-katri/dream-textures) contributors.*
 
 # Getting Started
 
