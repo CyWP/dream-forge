@@ -5,6 +5,7 @@ Extension of [Dream Textures](https://github.com/carson-katri/dream-textures) fo
 * Easily create displacement designs that respond to a mesh's from.
 * Edit and guide generation using UV mapping and texture painting.
 * Combine with shaders for full displacement control.
+
 ![Demo](docs/assets/dream_demo.gif)
 
 *A huge thanks to [Carson Katri](https://github.com/carson-katri) and the [Dream Textures](https://github.com/carson-katri/dream-textures) contributors.*
